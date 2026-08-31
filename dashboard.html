@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roving Performance Dashboard</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
@@ -15,196 +16,210 @@
 <body class="bg-gray-50">
 <div id="root"></div>
 <script type="text/babel">
-const { useState, useMemo } = React;
-const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } = Recharts;
+// ╔══════════════════════════════════════╗
+// ║  🔗 貼上你嘅 Apps Script 部署 URL     ║
+// ╚══════════════════════════════════════╝
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyC79wwzGLIKx9Dvs8-IWJZt7A_1MG1KXo-rAce1IR4Em33-Zept5iKRmfQnEKg8GQzWg/exec';
 
-const MONTHS_LABEL = ['','1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
-const ALL_DATA = {
-  '2025-07': [
-    { date:'2025-07-03', weather:'晴天', ic:'Ho Shuk Yi Hera', s1:'Chan Ivan', c1:10, h1:3, b1:2, s2:'Li Cho Ying Tracy', c2:7, h2:2, b2:2, s3:'', fgT:3800, fgR:1800 },
-    { date:'2025-07-05', weather:'間歇落雨', ic:'Ip Ho Wai Jimmy', s1:'Kong Ka Ho Marshall', c1:8, h1:2, b1:2, s2:'Chan Ivan', c2:9, h2:3, b2:2, s3:'', fgT:3200, fgR:1500 },
-    { date:'2025-07-08', weather:'晴天', ic:'Chan Sze Wa', s1:'Chan Ivan', c1:11, h1:3, b1:2, s2:'Yip Hei Man Bernice', c2:6, h2:2, b2:1, s3:'', fgT:4000, fgR:2000 },
-    { date:'2025-07-10', weather:'晴天', ic:'Lo Chih Vincent', s1:'Li Ho Yeung Bingo', c1:9, h1:3, b1:2, s2:'Chan Ivan', c2:10, h2:3, b2:2, s3:'', fgT:4200, fgR:2100 },
-    { date:'2025-07-12', weather:'惡劣天氣', ic:'Ho Shuk Yi Hera', s1:'', fgT:'', fgR:'' },
-    { date:'2025-07-15', weather:'間歇落雨', ic:'Ip Ho Wai Jimmy', s1:'Chan Ivan', c1:8, h1:2, b1:2, s2:'Kong Ka Ho Marshall', c2:7, h2:2, b2:1, s3:'', fgT:2900, fgR:1300 },
-    { date:'2025-07-17', weather:'晴天', ic:'Yuen Cheuk Ying Anita', s1:'Chan Ivan', c1:12, h1:3, b1:3, s2:'Li Cho Ying Tracy', c2:8, h2:2, b2:2, s3:'', fgT:4500, fgR:2300 },
-    { date:'2025-07-19', weather:'晴天', ic:'Chan Sze Wa', s1:'Yip Hei Man Bernice', c1:7, h1:2, b1:2, s2:'Chan Ivan', c2:13, h2:3, b2:3, s3:'', fgT:4600, fgR:2400 },
-    { date:'2025-07-22', weather:'間歇落雨', ic:'Lo Chih Vincent', s1:'Li Ho Yeung Bingo', c1:6, h1:2, b1:1, s2:'Li Cho Ying Tracy', c2:5, h2:2, b2:1, s3:'', fgT:2600, fgR:1100 },
-    { date:'2025-07-24', weather:'晴天', ic:'Ho Shuk Yi Hera', s1:'Chan Ivan', c1:14, h1:4, b1:3, s2:'Kong Ka Ho Marshall', c2:10, h2:3, b2:2, s3:'', fgT:5000, fgR:2800 },
-    { date:'2025-07-26', weather:'晴天', ic:'Ip Ho Wai Jimmy', s1:'Kong Ka Ho Marshall', c1:11, h1:3, b1:2, s2:'Chan Ivan', c2:12, h2:3, b2:3, s3:'', fgT:5200, fgR:2700 },
-    { date:'2025-07-29', weather:'間歇落雨', ic:'Chan Sze Wa', s1:'Li Ho Yeung Bingo', c1:7, h1:2, b1:2, s2:'Chan Ivan', c2:9, h2:3, b2:2, s3:'', fgT:3100, fgR:1500 },
-    { date:'2025-07-31', weather:'晴天', ic:'Yuen Cheuk Ying Anita', s1:'Chan Ivan', c1:15, h1:4, b1:3, s2:'Li Cho Ying Tracy', c2:9, h2:3, b2:2, s3:'Kong Ka Ho Marshall', c3:11, h3:3, b3:2, fgT:5800, fgR:3200 },
-  ],
-  '2025-08': [
-    { date:'2025-08-02', weather:'晴天', ic:'Ho Shuk Yi Hera', s1:'Chan Ivan', c1:12, h1:3, b1:3, s2:'Li Cho Ying Tracy', c2:8, h2:2, b2:2, s3:'', fgT:4200, fgR:2200 },
-    { date:'2025-08-05', weather:'間歇落雨', ic:'Ip Ho Wai Jimmy', s1:'Kong Ka Ho Marshall', c1:9, h1:3, b1:2, s2:'Chan Ivan', c2:10, h2:3, b2:2, s3:'', fgT:3600, fgR:1800 },
-    { date:'2025-08-07', weather:'晴天', ic:'Chan Sze Wa', s1:'Chan Ivan', c1:13, h1:3, b1:3, s2:'Yip Hei Man Bernice', c2:7, h2:2, b2:2, s3:'', fgT:4500, fgR:2400 },
-    { date:'2025-08-09', weather:'惡劣天氣', ic:'Lo Chih Vincent', s1:'', fgT:'', fgR:'' },
-    { date:'2025-08-12', weather:'晴天', ic:'Ho Shuk Yi Hera', s1:'Chan Ivan', c1:11, h1:3, b1:2, s2:'Kong Ka Ho Marshall', c2:10, h2:3, b2:2, s3:'', fgT:4000, fgR:2100 },
-    { date:'2025-08-14', weather:'間歇落雨', ic:'Yuen Cheuk Ying Anita', s1:'Li Cho Ying Tracy', c1:8, h1:2, b1:2, s2:'Chan Ivan', c2:11, h2:3, b2:2, s3:'', fgT:3800, fgR:1900 },
-    { date:'2025-08-16', weather:'晴天', ic:'Ip Ho Wai Jimmy', s1:'Chan Ivan', c1:14, h1:4, b1:3, s2:'Li Ho Yeung Bingo', c2:9, h2:3, b2:2, s3:'', fgT:5000, fgR:2800 },
-    { date:'2025-08-19', weather:'晴天', ic:'Chan Sze Wa', s1:'Yip Hei Man Bernice', c1:8, h1:3, b1:2, s2:'Chan Ivan', c2:12, h2:3, b2:3, s3:'', fgT:4600, fgR:2500 },
-    { date:'2025-08-21', weather:'間歇落雨', ic:'Lo Chih Vincent', s1:'Li Cho Ying Tracy', c1:6, h1:2, b1:1, s2:'Kong Ka Ho Marshall', c2:8, h2:2, b2:2, s3:'', fgT:3000, fgR:1400 },
-    { date:'2025-08-23', weather:'晴天', ic:'Ho Shuk Yi Hera', s1:'Chan Ivan', c1:15, h1:4, b1:3, s2:'Li Cho Ying Tracy', c2:10, h2:3, b2:2, s3:'', fgT:5200, fgR:3000 },
-    { date:'2025-08-26', weather:'晴天', ic:'Ip Ho Wai Jimmy', s1:'Kong Ka Ho Marshall', c1:12, h1:3, b1:3, s2:'Chan Ivan', c2:13, h2:3, b2:3, s3:'Yip Hei Man Bernice', c3:7, h3:2, b3:2, fgT:5600, fgR:3100 },
-    { date:'2025-08-28', weather:'間歇落雨', ic:'Chan Sze Wa', s1:'Li Ho Yeung Bingo', c1:7, h1:2, b1:2, s2:'Chan Ivan', c2:9, h2:3, b2:2, s3:'', fgT:3200, fgR:1600 },
-    { date:'2025-08-30', weather:'晴天', ic:'Yuen Cheuk Ying Anita', s1:'Chan Ivan', c1:16, h1:4, b1:4, s2:'Kong Ka Ho Marshall', c2:12, h2:3, b2:3, s3:'Li Ho Yeung Bingo', c3:10, h3:3, b3:2, fgT:6400, fgR:3800 },
-  ],
-  '2026-07': [
-    { date:'2026-07-02', weather:'晴天', ic:'Ho Shuk Yi Hera', s1:'Chan Ivan', c1:13, h1:3, b1:3, s2:'Li Cho Ying Tracy', c2:9, h2:3, b2:2, s3:'', fgT:4800, fgR:2500 },
-    { date:'2026-07-04', weather:'間歇落雨', ic:'Ip Ho Wai Jimmy', s1:'Kong Ka Ho Marshall', c1:10, h1:3, b1:2, s2:'Chan Ivan', c2:11, h2:3, b2:3, s3:'', fgT:4200, fgR:2100 },
-    { date:'2026-07-06', weather:'晴天', ic:'Chan Sze Wa', s1:'Chan Ivan', c1:15, h1:4, b1:3, s2:'Yip Hei Man Bernice', c2:8, h2:2, b2:2, s3:'', fgT:5200, fgR:2800 },
-    { date:'2026-07-09', weather:'晴天', ic:'Lo Chih Vincent', s1:'Li Ho Yeung Bingo', c1:11, h1:3, b1:3, s2:'Chan Ivan', c2:14, h2:4, b2:3, s3:'', fgT:5600, fgR:3000 },
-    { date:'2026-07-11', weather:'間歇落雨', ic:'Ho Shuk Yi Hera', s1:'Chan Ivan', c1:9, h1:3, b1:2, s2:'Kong Ka Ho Marshall', c2:10, h2:3, b2:2, s3:'', fgT:3900, fgR:1800 },
-    { date:'2026-07-13', weather:'惡劣天氣', ic:'Ip Ho Wai Jimmy', s1:'', fgT:'', fgR:'' },
-    { date:'2026-07-16', weather:'晴天', ic:'Yuen Cheuk Ying Anita', s1:'Chan Ivan', c1:16, h1:4, b1:4, s2:'Li Cho Ying Tracy', c2:11, h2:3, b2:3, s3:'Kong Ka Ho Marshall', c3:13, h3:3, b3:3, fgT:6800, fgR:3800 },
-    { date:'2026-07-18', weather:'晴天', ic:'Chan Sze Wa', s1:'Yip Hei Man Bernice', c1:10, h1:3, b1:2, s2:'Chan Ivan', c2:17, h2:4, b2:4, s3:'', fgT:5900, fgR:3200, r2:'帶客能力明顯進步' },
-    { date:'2026-07-20', weather:'間歇落雨', ic:'Lo Chih Vincent', s1:'Li Ho Yeung Bingo', c1:8, h1:2, b1:2, s2:'Li Cho Ying Tracy', c2:7, h2:2, b2:2, s3:'', fgT:3600, fgR:1600 },
-    { date:'2026-07-23', weather:'晴天', ic:'Ho Shuk Yi Hera', s1:'Chan Ivan', c1:18, h1:5, b1:4, s2:'Kong Ka Ho Marshall', c2:14, h2:4, b2:3, s3:'', fgT:6500, fgR:3900, r1:'今日表現非常好' },
-    { date:'2026-07-25', weather:'晴天', ic:'Ip Ho Wai Jimmy', s1:'Kong Ka Ho Marshall', c1:15, h1:4, b1:3, s2:'Chan Ivan', c2:16, h2:4, b2:4, s3:'Yip Hei Man Bernice', c3:9, h3:3, b3:2, fgT:7200, fgR:4200 },
-    { date:'2026-07-27', weather:'間歇落雨', ic:'Chan Sze Wa', s1:'Li Ho Yeung Bingo', c1:10, h1:3, b1:2, s2:'Chan Ivan', c2:12, h2:3, b2:3, s3:'', fgT:4100, fgR:2200 },
-    { date:'2026-07-30', weather:'晴天', ic:'Yuen Cheuk Ying Anita', s1:'Chan Ivan', c1:19, h1:5, b1:5, s2:'Li Cho Ying Tracy', c2:12, h2:3, b2:3, s3:'Kong Ka Ho Marshall', c3:15, h3:4, b3:3, fgT:8000, fgR:5000, r1:'全月最佳表現' },
-  ],
-  '2026-08': [
-    { date:'2026-08-03', weather:'晴天', ic:'Ho Shuk Yi Hera', s1:'Chan Ivan', c1:16, h1:4, b1:4, s2:'Li Cho Ying Tracy', c2:10, h2:3, b2:3, s3:'', fgT:5800, fgR:3200 },
-    { date:'2026-08-05', weather:'間歇落雨', ic:'Ip Ho Wai Jimmy', s1:'Kong Ka Ho Marshall', c1:12, h1:3, b1:3, s2:'Chan Ivan', c2:13, h2:4, b2:3, s3:'', fgT:4900, fgR:2700 },
-    { date:'2026-08-07', weather:'晴天', ic:'Chan Sze Wa', s1:'Chan Ivan', c1:18, h1:5, b1:4, s2:'Yip Hei Man Bernice', c2:9, h2:3, b2:2, s3:'', fgT:6100, fgR:3500 },
-    { date:'2026-08-10', weather:'晴天', ic:'Lo Chih Vincent', s1:'Li Ho Yeung Bingo', c1:14, h1:4, b1:3, s2:'Chan Ivan', c2:17, h2:4, b2:4, s3:'Kong Ka Ho Marshall', c3:13, h3:3, b3:3, fgT:7200, fgR:4400 },
-    { date:'2026-08-12', weather:'間歇落雨', ic:'Ho Shuk Yi Hera', s1:'Chan Ivan', c1:11, h1:3, b1:3, s2:'Li Cho Ying Tracy', c2:10, h2:3, b2:2, s3:'', fgT:4600, fgR:2500 },
-    { date:'2026-08-14', weather:'晴天', ic:'Yuen Cheuk Ying Anita', s1:'Kong Ka Ho Marshall', c1:16, h1:4, b1:4, s2:'Chan Ivan', c2:19, h2:5, b2:4, s3:'Li Ho Yeung Bingo', c3:12, h3:3, b3:3, fgT:7800, fgR:4800, r2:'帶客技巧非常好' },
-    { date:'2026-08-17', weather:'惡劣天氣', ic:'Ip Ho Wai Jimmy', s1:'', fgT:'', fgR:'' },
-    { date:'2026-08-19', weather:'晴天', ic:'Chan Sze Wa', s1:'Chan Ivan', c1:14, h1:4, b1:3, s2:'Yip Hei Man Bernice', c2:11, h2:3, b2:3, s3:'', fgT:5600, fgR:3100 },
-    { date:'2026-08-21', weather:'間歇落雨', ic:'Lo Chih Vincent', s1:'Li Cho Ying Tracy', c1:8, h1:3, b1:2, s2:'Kong Ka Ho Marshall', c2:12, h2:3, b2:3, s3:'', fgT:4200, fgR:2200 },
-    { date:'2026-08-24', weather:'晴天', ic:'Ho Shuk Yi Hera', s1:'Chan Ivan', c1:18, h1:5, b1:4, s2:'Li Cho Ying Tracy', c2:12, h2:3, b2:3, s3:'', fgT:6200, fgR:3800 },
-    { date:'2026-08-25', weather:'晴天', ic:'Ip Ho Wai Jimmy', s1:'Kong Ka Ho Marshall', c1:15, h1:4, b1:4, s2:'Chan Ivan', c2:14, h2:4, b2:3, s3:'Yip Hei Man Bernice', c3:10, h3:3, b3:2, fgT:7100, fgR:4200 },
-    { date:'2026-08-26', weather:'間歇落雨', ic:'Chan Sze Wa', s1:'Li Ho Yeung Bingo', c1:9, h1:3, b1:2, s2:'Chan Ivan', c2:11, h2:3, b2:3, s3:'', fgT:4100, fgR:2300 },
-    { date:'2026-08-27', weather:'惡劣天氣', ic:'Lo Chih Vincent', s1:'', fgT:'', fgR:'' },
-    { date:'2026-08-28', weather:'晴天', ic:'Yuen Cheuk Ying Anita', s1:'Chan Ivan', c1:20, h1:5, b1:5, s2:'Kong Ka Ho Marshall', c2:16, h2:4, b2:4, s3:'Wan Lai Shan Wendy', c3:8, h3:3, b3:2, fgT:8500, fgR:5600, r1:'表現非常好，帶動氣氛' },
-    { date:'2026-08-29', weather:'間歇落雨', ic:'Ho Shuk Yi Hera', s1:'Li Cho Ying Tracy', c1:11, h1:4, b1:3, s2:'Yip Hei Man Bernice', c2:9, h2:3, b2:2, s3:'', fgT:4800, fgR:2600 },
-    { date:'2026-08-30', weather:'晴天', ic:'Ip Ho Wai Jimmy', s1:'Chan Ivan', c1:22, h1:5, b1:5, s2:'Li Ho Yeung Bingo', c2:13, h2:4, b2:3, s3:'Kong Ka Ho Marshall', c3:17, h3:5, b3:4, fgT:9200, fgR:6100, r1:'全日最高 capture' },
-  ],
-};
+if(typeof Recharts==='undefined'){document.getElementById('root').innerHTML='<div style="text-align:center;padding:80px"><div style="font-size:48px">⚠️</div><div style="font-size:18px;font-weight:bold;color:#666">圖表庫載入失敗</div><button onclick="location.reload()" style="margin-top:20px;padding:12px 32px;background:#6366f1;color:white;border:none;border-radius:12px;cursor:pointer">🔄 重新載入</button></div>';throw new Error('Recharts not loaded');}
 
-const INIT_IC_ROSTER = [
-  { id:1, fullName:'Ho Shuk Yi Hera', nickname:'Hera', active:true },
-  { id:2, fullName:'Ip Ho Wai Jimmy', nickname:'Jimmy', active:true },
-  { id:3, fullName:'Chan Sze Wa', nickname:'Sze Wa', active:true },
-  { id:4, fullName:'Lo Chih Vincent', nickname:'Vincent', active:true },
-  { id:5, fullName:'Yuen Cheuk Ying Anita', nickname:'Anita', active:true },
-];
-const INIT_STAFF_ROSTER = [
-  { id:101, fullName:'Chan Ivan', nickname:'Ivan', active:true },
-  { id:102, fullName:'Kong Ka Ho Marshall', nickname:'Marshall', active:true },
-  { id:103, fullName:'Li Cho Ying Tracy', nickname:'Tracy', active:true },
-  { id:104, fullName:'Yip Hei Man Bernice', nickname:'Bernice', active:true },
-  { id:105, fullName:'Li Ho Yeung Bingo', nickname:'Bingo', active:true },
-  { id:106, fullName:'Wan Lai Shan Wendy', nickname:'Wendy', active:true },
-];
+const{useState,useMemo,useEffect,useCallback}=React;
+const{BarChart,Bar,XAxis,YAxis,CartesianGrid,Tooltip,ResponsiveContainer,PieChart,Pie,Cell,LineChart,Line,Legend,RadarChart,Radar,PolarGrid,PolarAngleAxis,PolarRadiusAxis}=Recharts;
 
-const AVAILABLE_MONTHS_BY_YEAR = { 2025: [7, 8], 2026: [7, 8] };
-const AVAILABLE_YEARS = Object.keys(AVAILABLE_MONTHS_BY_YEAR).map(Number).sort();
-const TABS = ['📊 總覽','👤 同事','🧑‍💼 IC','📅 每週','🌦️ 天氣','📆 年度','📋 數據','⚙️ 設定'];
-const pieColors = ['#6366f1','#a78bfa','#c4b5fd','#f59e0b','#10b981','#ef4444','#3b82f6'];
+// ═══════════════════════════════════════
+// 🔄 DATA TRANSFORMATION
+// ═══════════════════════════════════════
+function parseDate(val){if(!val)return'';const s=String(val);if(s.includes('T'))return s.split('T')[0];if(s.includes('/')){const p=s.split('/');if(p.length===3&&p[2].length===4)return p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');if(p.length===3&&p[0].length===4)return p[0]+'-'+p[1].padStart(2,'0')+'-'+p[2].padStart(2,'0');}if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;try{const d=new Date(s);if(!isNaN(d))return d.toISOString().split('T')[0];}catch(e){}return s;}
 
-function Stars({val}){if(!val)return <span className="text-gray-300 text-xs">—</span>;return(<span className="inline-flex gap-0.5">{[1,2,3,4,5].map(i=>(<span key={i} className={`text-sm ${i<=val?'text-yellow-400':'text-gray-200'}`}>★</span>))}</span>);}
-
-function StatCard({icon,label,value,sub,color='indigo'}){
-  const bg={indigo:'bg-indigo-50 border-indigo-100',green:'bg-emerald-50 border-emerald-100',amber:'bg-amber-50 border-amber-100',blue:'bg-blue-50 border-blue-100',rose:'bg-rose-50 border-rose-100',purple:'bg-purple-50 border-purple-100'};
-  const txt={indigo:'text-indigo-600',green:'text-emerald-600',amber:'text-amber-600',blue:'text-blue-600',rose:'text-rose-600',purple:'text-purple-600'};
-  return(<div className={`${bg[color]} border rounded-2xl p-4 flex flex-col`}><div className="text-2xl mb-1">{icon}</div><div className="text-xs text-gray-400 font-medium mb-1">{label}</div><div className={`text-2xl font-bold ${txt[color]}`}>{value}</div>{sub&&<div className="text-xs text-gray-400 mt-1">{sub}</div>}</div>);
+function transformResponses(rows){
+  if(!rows||!Array.isArray(rows))return[];
+  const dayMap={};
+  rows.forEach(row=>{
+    const dateStr=parseDate(row.date);
+    if(!dateStr||dateStr.length<8)return;
+    if(!dayMap[dateStr]){
+      dayMap[dateStr]={date:dateStr,weather:String(row.weather||'晴天'),ic:String(row.ic||''),fgT:'',fgR:'',staff:[]};
+      const fgT=Number(row.fgTotal),fgR=Number(row.fgRoving);
+      if(!isNaN(fgT)&&fgT>0)dayMap[dateStr].fgT=fgT;
+      if(!isNaN(fgR)&&fgR>0)dayMap[dateStr].fgR=fgR;
+    }
+    const name=String(row.name||'').trim();
+    if(name){dayMap[dateStr].staff.push({name,c:Number(row.captures)||0,h:Number(row.hitRate)||0,b:Number(row.bringBack)||0,r:String(row.remark||'').trim()});}
+  });
+  return Object.values(dayMap).map(day=>{
+    const rec={date:day.date,weather:day.weather,ic:day.ic,fgT:day.fgT,fgR:day.fgR,s1:'',s2:'',s3:''};
+    day.staff.forEach((s,i)=>{if(i>=3)return;const x=i+1;rec['s'+x]=s.name;rec['c'+x]=s.c;rec['h'+x]=s.h;rec['b'+x]=s.b;rec['r'+x]=s.r;});
+    return rec;
+  }).sort((a,b)=>a.date.localeCompare(b.date));
 }
 
-function YoYBadge({cur,prev}){const c=parseFloat(cur),p=parseFloat(prev);if(isNaN(c)||isNaN(p)||p===0)return <span className="text-gray-300 text-xs">—</span>;const pct=((c-p)/Math.abs(p)*100).toFixed(1);const up=parseFloat(pct)>0;const zero=Math.abs(parseFloat(pct))<0.5;if(zero)return <span className="text-gray-400 text-xs font-medium">→ 0%</span>;return <span className={`text-xs font-bold ${up?'text-emerald-600':'text-rose-500'}`}>{up?'▲':'▼'} {Math.abs(parseFloat(pct))}%</span>;}
+function buildDataStructures(records){
+  const grouped={},mby={};
+  records.forEach(rec=>{const p=rec.date.split('-');if(p.length<2)return;const key=p[0]+'-'+p[1],y=parseInt(p[0]),m=parseInt(p[1]);if(!grouped[key])grouped[key]=[];grouped[key].push(rec);if(!mby[y])mby[y]=new Set();mby[y].add(m);});
+  Object.keys(mby).forEach(y=>{mby[y]=Array.from(mby[y]).sort((a,b)=>a-b);});
+  return{grouped,mby,years:Object.keys(mby).map(Number).sort()};
+}
 
-function getWeeksForMonth(y,m){const ld=new Date(y,m,0).getDate();const ranges=[[1,7],[8,14],[15,21],[22,ld]];return ranges.map(([s,e],i)=>{const sm=String(m).padStart(2,'0');return{key:`W${i+1}`,label:`W${i+1}（${m}/${s}–${m}/${e}）`,start:`${y}-${sm}-${String(s).padStart(2,'0')}`,end:`${y}-${sm}-${String(e).padStart(2,'0')}`};});}
+// ═══════════════════════════════════════
+// 📋 GLOBAL DATA
+// ═══════════════════════════════════════
+let ALL_DATA={};
+let AVAILABLE_MONTHS_BY_YEAR={};
+let AVAILABLE_YEARS=[];
 
-function getStaffEntries(name,data){const e=[];data.forEach(r=>{[1,2,3].forEach(i=>{if(r[`s${i}`]===name)e.push({date:r.date,weather:r.weather,c:r[`c${i}`]||0,h:r[`h${i}`]||0,b:r[`b${i}`]||0,remark:r[`r${i}`]||''});});});return e;}
+const MONTHS_LABEL=['','1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+const TABS=['📊 總覽','👤 同事','🧑‍💼 IC','📅 每週','🌦️ 天氣','📆 年度','📋 數據','⚙️ 設定'];
+const pieColors=['#6366f1','#a78bfa','#c4b5fd','#f59e0b','#10b981','#ef4444','#3b82f6'];
 
-function getStaffList(data){const s=new Set();data.forEach(r=>{[1,2,3].forEach(i=>{if(r[`s${i}`])s.add(r[`s${i}`]);});});return Array.from(s).sort((a,b)=>{const ea=getStaffEntries(a,data),eb=getStaffEntries(b,data);return eb.reduce((s,e)=>s+e.c,0)-ea.reduce((s,e)=>s+e.c,0);});}
+// ═══════════════════════════════════════
+// 🔧 HELPER FUNCTIONS (unchanged)
+// ═══════════════════════════════════════
+function Stars({val}){if(!val)return<span className="text-gray-300 text-xs">—</span>;return(<span className="inline-flex gap-0.5">{[1,2,3,4,5].map(i=>(<span key={i} className={`text-sm ${i<=val?'text-yellow-400':'text-gray-200'}`}>★</span>))}</span>);}
 
-function getStaffWeekly(name,data,weeks){const entries=getStaffEntries(name,data);return weeks.map(w=>{const wE=entries.filter(e=>e.date>=w.start&&e.date<=w.end);if(wE.length===0)return{...w,days:0,totalC:0,avgC:'-',avgH:'-',avgB:'-'};const totalC=wE.reduce((s,e)=>s+e.c,0);return{...w,days:wE.length,totalC,avgC:(totalC/wE.length).toFixed(1),avgH:(wE.reduce((s,e)=>s+e.h,0)/wE.length).toFixed(1),avgB:(wE.reduce((s,e)=>s+e.b,0)/wE.length).toFixed(1)};});}
+function StatCard({icon,label,value,sub,color='indigo'}){const bg={indigo:'bg-indigo-50 border-indigo-100',green:'bg-emerald-50 border-emerald-100',amber:'bg-amber-50 border-amber-100',blue:'bg-blue-50 border-blue-100',rose:'bg-rose-50 border-rose-100',purple:'bg-purple-50 border-purple-100'};const txt={indigo:'text-indigo-600',green:'text-emerald-600',amber:'text-amber-600',blue:'text-blue-600',rose:'text-rose-600',purple:'text-purple-600'};return(<div className={`${bg[color]} border rounded-2xl p-4 flex flex-col`}><div className="text-2xl mb-1">{icon}</div><div className="text-xs text-gray-400 font-medium mb-1">{label}</div><div className={`text-2xl font-bold ${txt[color]}`}>{value}</div>{sub&&<div className="text-xs text-gray-400 mt-1">{sub}</div>}</div>);}
 
-function getStaffMonthly(name,data){const entries=getStaffEntries(name,data);if(entries.length===0)return null;const totalC=entries.reduce((s,e)=>s+e.c,0);const remarks=entries.filter(e=>e.remark).map(e=>({date:e.date,text:e.remark}));const best=entries.reduce((a,b)=>b.c>a.c?b:a,entries[0]);return{days:entries.length,totalC,avgC:(totalC/entries.length).toFixed(1),avgH:(entries.reduce((s,e)=>s+e.h,0)/entries.length).toFixed(1),avgB:(entries.reduce((s,e)=>s+e.b,0)/entries.length).toFixed(1),remarks,bestDay:best};}
+function YoYBadge({cur,prev}){const c=parseFloat(cur),p=parseFloat(prev);if(isNaN(c)||isNaN(p)||p===0)return<span className="text-gray-300 text-xs">—</span>;const pct=((c-p)/Math.abs(p)*100).toFixed(1);const up=parseFloat(pct)>0;if(Math.abs(parseFloat(pct))<0.5)return<span className="text-gray-400 text-xs font-medium">→ 0%</span>;return<span className={`text-xs font-bold ${up?'text-emerald-600':'text-rose-500'}`}>{up?'▲':'▼'} {Math.abs(parseFloat(pct))}%</span>;}
 
-function getWeeklyOverview(data,weeks){return weeks.map(w=>{const rows=data.filter(r=>r.date>=w.start&&r.date<=w.end&&r.weather!=='惡劣天氣');if(rows.length===0)return{...w,avgC:0,avgH:0,avgB:0,fgT:0,fgR:0,pct:'0%'};let tC=0,tH=0,tB=0,cnt=0,fgT=0,fgR=0;rows.forEach(r=>{[1,2,3].forEach(i=>{if(r[`s${i}`]){tC+=r[`c${i}`]||0;tH+=r[`h${i}`]||0;tB+=r[`b${i}`]||0;cnt++;}});fgT+=r.fgT||0;fgR+=r.fgR||0;});return{...w,avgC:cnt?(tC/cnt).toFixed(1):0,avgH:cnt?(tH/cnt).toFixed(1):0,avgB:cnt?(tB/cnt).toFixed(1):0,fgT,fgR,pct:fgT?(fgR/fgT*100).toFixed(1)+'%':'0%'};});}
+function Modal({open,onClose,title,children}){if(!open)return null;return(<div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40" onClick={onClose}><div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6" onClick={e=>e.stopPropagation()}><div className="flex items-center justify-between mb-4"><div className="font-bold text-gray-800">{title}</div><button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl font-bold">✕</button></div>{children}</div></div>);}
 
-function getWeatherStats(data){const stats={};data.forEach(r=>{if(!stats[r.weather])stats[r.weather]={days:0,fgTs:[],fgRs:[],hrs:[],brs:[]};stats[r.weather].days++;if(r.fgT)stats[r.weather].fgTs.push(r.fgT);if(r.fgR)stats[r.weather].fgRs.push(r.fgR);[1,2,3].forEach(i=>{if(r[`h${i}`])stats[r.weather].hrs.push(r[`h${i}`]);if(r[`b${i}`])stats[r.weather].brs.push(r[`b${i}`]);});});return Object.entries(stats).map(([w,d])=>({weather:w,days:d.days,avgFgT:d.fgTs.length?Math.round(d.fgTs.reduce((a,b)=>a+b,0)/d.fgTs.length):'-',avgFgR:d.fgRs.length?Math.round(d.fgRs.reduce((a,b)=>a+b,0)/d.fgRs.length):'-',avgH:d.hrs.length?(d.hrs.reduce((a,b)=>a+b,0)/d.hrs.length).toFixed(1):'-',avgB:d.brs.length?(d.brs.reduce((a,b)=>a+b,0)/d.brs.length).toFixed(1):'-',pct:d.fgTs.length?(d.fgRs.reduce((a,b)=>a+b,0)/d.fgTs.reduce((a,b)=>a+b,0)*100).toFixed(1)+'%':'-'}));}
-
-function getICList(data){const s=new Set();data.forEach(r=>s.add(r.ic));return Array.from(s).sort();}
-
-function getICStats(icName,data){const records=data.filter(r=>r.ic===icName);const workRecs=records.filter(r=>r.weather!=='惡劣天氣');let totalCap=0,rovStaffCnt=0,fgT=0,fgR=0,tH=0,tB=0;workRecs.forEach(r=>{[1,2,3].forEach(i=>{if(r[`s${i}`]){totalCap+=r[`c${i}`]||0;tH+=r[`h${i}`]||0;tB+=r[`b${i}`]||0;rovStaffCnt++;}});fgT+=r.fgT||0;fgR+=r.fgR||0;});const totalHeadcount=rovStaffCnt+workRecs.length;return{totalDays:records.length,workDays:workRecs.length,cancelDays:records.length-workRecs.length,totalCap,rovStaffCnt,avgRovStaff:workRecs.length>0?(rovStaffCnt/workRecs.length).toFixed(1):'-',avgHeadcount:workRecs.length>0?(totalHeadcount/workRecs.length).toFixed(1):'-',avgCapPerStaff:rovStaffCnt>0?(totalCap/rovStaffCnt).toFixed(1):'-',avgCapPerDay:workRecs.length>0?(totalCap/workRecs.length).toFixed(1):'-',avgH:rovStaffCnt>0?(tH/rovStaffCnt).toFixed(1):'-',avgB:rovStaffCnt>0?(tB/rovStaffCnt).toFixed(1):'-',fgT,fgR,fgDailyAvg:workRecs.length>0?Math.round(fgT/workRecs.length):0,rovPct:fgT>0?(fgR/fgT*100).toFixed(1):0,rovPctStr:fgT>0?(fgR/fgT*100).toFixed(1)+'%':'-'};}
-
-function rankICs(data){const icList=getICList(data);const statsArr=icList.map(ic=>({name:ic,...getICStats(ic,data)})).filter(s=>s.workDays>0);if(statsArr.length===0)return[];const maxCap=Math.max(...statsArr.map(s=>parseFloat(s.avgCapPerDay)||0));const maxFgD=Math.max(...statsArr.map(s=>s.fgDailyAvg||0));const maxRov=Math.max(...statsArr.map(s=>parseFloat(s.rovPct)||0));const maxH=Math.max(...statsArr.map(s=>parseFloat(s.avgH)||0));const maxB=Math.max(...statsArr.map(s=>parseFloat(s.avgB)||0));return statsArr.map(s=>{const sCapDay=maxCap>0?((parseFloat(s.avgCapPerDay)||0)/maxCap)*30:0;const sFgD=maxFgD>0?((s.fgDailyAvg||0)/maxFgD)*25:0;const sRov=maxRov>0?((parseFloat(s.rovPct)||0)/maxRov)*20:0;const sH=maxH>0?((parseFloat(s.avgH)||0)/maxH)*15:0;const sB=maxB>0?((parseFloat(s.avgB)||0)/maxB)*10:0;const score=sCapDay+sFgD+sRov+sH+sB;const breakdown={cap:Math.round(sCapDay*10)/10,fg:Math.round(sFgD*10)/10,rov:Math.round(sRov*10)/10,hit:Math.round(sH*10)/10,bring:Math.round(sB*10)/10};return{...s,score:Math.round(score*10)/10,breakdown};}).sort((a,b)=>b.score-a.score);}
-
-function genICComment(ranked){if(!ranked||ranked.length===0)return'';const top=ranked[0];const parts=[`${top._sn} 整體表現最突出`];if(parseFloat(top.avgCapPerDay)>0)parts.push(`日均 Capture ${top.avgCapPerDay} 組`);if(top.fgDailyAvg>0)parts.push(`日均 FG $${top.fgDailyAvg.toLocaleString()}`);if(parseFloat(top.rovPct)>0)parts.push(`Roving 佔比 ${top.rovPctStr}`);let comment=parts.join('，');if(ranked.length>1){const last=ranked[ranked.length-1];const gap=(top.score-last.score).toFixed(1);comment+=`。與排尾 ${last._sn} 相差 ${gap} 分`;if(parseFloat(last.avgCapPerDay)<parseFloat(top.avgCapPerDay)*0.7){comment+=`，${last._sn} 日均 Capture 偏低（${last.avgCapPerDay}），建議跟進`;}}return comment+'。';}
-
-function getStaffUnderIC(icName,data){const map={};data.filter(r=>r.ic===icName&&r.weather!=='惡劣天氣').forEach(r=>{[1,2,3].forEach(i=>{const n=r[`s${i}`];if(n){if(!map[n])map[n]={days:0,tC:0,tH:0,tB:0};map[n].days++;map[n].tC+=r[`c${i}`]||0;map[n].tH+=r[`h${i}`]||0;map[n].tB+=r[`b${i}`]||0;}});});return Object.entries(map).map(([n,d])=>({name:n,days:d.days,totalC:d.tC,avgC:(d.tC/d.days).toFixed(1),avgH:(d.tH/d.days).toFixed(1),avgB:(d.tB/d.days).toFixed(1)})).sort((a,b)=>b.totalC-a.totalC);}
-
-function calcYearSummary(year){const months=AVAILABLE_MONTHS_BY_YEAR[year]||[];let totalCap=0,fgT=0,fgR=0,workDays=0,totalDays=0,staffCnt=0;months.forEach(m=>{const key=`${year}-${String(m).padStart(2,'0')}`;const d=ALL_DATA[key]||[];d.forEach(r=>{totalDays++;if(r.weather!=='惡劣天氣'){workDays++;[1,2,3].forEach(i=>{if(r[`s${i}`]){totalCap+=r[`c${i}`]||0;staffCnt++;}});fgT+=r.fgT||0;fgR+=r.fgR||0;}});});return{totalCap,fgT,fgR,workDays,totalDays,avgCap:staffCnt>0?(totalCap/staffCnt).toFixed(1):'-',rovPct:fgT>0?(fgR/fgT*100).toFixed(1):'-',months:months.length};}
-
-function getYearlyMonthly(year){const months=AVAILABLE_MONTHS_BY_YEAR[year]||[];return months.map(m=>{const key=`${year}-${String(m).padStart(2,'0')}`;const d=ALL_DATA[key]||[];const wd=d.filter(r=>r.weather!=='惡劣天氣');let tC=0,cnt=0,fgT=0,fgR=0;wd.forEach(r=>{[1,2,3].forEach(i=>{if(r[`s${i}`]){tC+=r[`c${i}`]||0;cnt++;}});fgT+=r.fgT||0;fgR+=r.fgR||0;});return{month:m,label:MONTHS_LABEL[m],totalDays:d.length,workDays:wd.length,totalCap:tC,avgCap:cnt>0?(tC/cnt).toFixed(1):'-',fgT,fgR,rovPct:fgT>0?(fgR/fgT*100).toFixed(1):'-'};});}
-
-function getYearlyStaffRank(year){const months=AVAILABLE_MONTHS_BY_YEAR[year]||[];const map={};months.forEach(m=>{const key=`${year}-${String(m).padStart(2,'0')}`;const d=ALL_DATA[key]||[];d.filter(r=>r.weather!=='惡劣天氣').forEach(r=>{[1,2,3].forEach(i=>{const n=r[`s${i}`];if(n){if(!map[n])map[n]={days:0,tC:0,tH:0,tB:0,months:new Set()};map[n].days++;map[n].tC+=r[`c${i}`]||0;map[n].tH+=r[`h${i}`]||0;map[n].tB+=r[`b${i}`]||0;map[n].months.add(m);}});});});return Object.entries(map).map(([n,d])=>({name:n,days:d.days,totalC:d.tC,avgC:(d.tC/d.days).toFixed(1),avgH:(d.tH/d.days).toFixed(1),avgB:(d.tB/d.days).toFixed(1),mths:d.months.size})).sort((a,b)=>b.totalC-a.totalC);}
-
-function getYearlyICRank(year){const months=AVAILABLE_MONTHS_BY_YEAR[year]||[];const map={};months.forEach(m=>{const key=`${year}-${String(m).padStart(2,'0')}`;const d=ALL_DATA[key]||[];d.forEach(r=>{const n=r.ic;if(!map[n])map[n]={days:0,workDays:0,tC:0,sCnt:0,fgT:0,fgR:0,tH:0,tB:0};map[n].days++;if(r.weather!=='惡劣天氣'){map[n].workDays++;[1,2,3].forEach(i=>{if(r[`s${i}`]){map[n].tC+=r[`c${i}`]||0;map[n].tH+=r[`h${i}`]||0;map[n].tB+=r[`b${i}`]||0;map[n].sCnt++;}});map[n].fgT+=r.fgT||0;map[n].fgR+=r.fgR||0;}});});return Object.entries(map).map(([n,d])=>{const totalHC=d.sCnt+d.workDays;return{name:n,days:d.days,workDays:d.workDays,totalCap:d.tC,avgHeadcount:d.workDays>0?(totalHC/d.workDays).toFixed(1):'-',avgCapPerStaff:d.sCnt>0?(d.tC/d.sCnt).toFixed(1):'-',avgCapPerDay:d.workDays>0?(d.tC/d.workDays).toFixed(1):'-',fgT:d.fgT,fgR:d.fgR,fgDailyAvg:d.workDays>0?Math.round(d.fgT/d.workDays):0,rovPct:d.fgT>0?(d.fgR/d.fgT*100).toFixed(1)+'%':'-'};}).sort((a,b)=>b.totalCap-a.totalCap);}
-
-function TrendArrow({weekly,metric}){const vals=weekly.filter(w=>w[metric]!=='-').map(w=>parseFloat(w[metric]));if(vals.length<2)return null;const diff=vals[vals.length-1]-vals[vals.length-2];if(Math.abs(diff)<0.1)return <span className="text-gray-400 text-xs ml-1">→</span>;return diff>0?<span className="text-emerald-500 text-xs ml-1">▲</span>:<span className="text-rose-500 text-xs ml-1">▼</span>;}
+function TrendArrow({weekly,metric}){const vals=weekly.filter(w=>w[metric]!=='-').map(w=>parseFloat(w[metric]));if(vals.length<2)return null;const diff=vals[vals.length-1]-vals[vals.length-2];if(Math.abs(diff)<0.1)return<span className="text-gray-400 text-xs ml-1">→</span>;return diff>0?<span className="text-emerald-500 text-xs ml-1">▲</span>:<span className="text-rose-500 text-xs ml-1">▼</span>;}
 
 const rankMedal=(i)=>i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`;
 const rankBg=(i)=>i===0?'bg-yellow-50 border-yellow-200':i===1?'bg-gray-50 border-gray-200':i===2?'bg-orange-50 border-orange-200':'bg-white border-gray-100';
 
-function Modal({open,onClose,title,children}){
-  if(!open)return null;
-  return(<div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40" onClick={onClose}>
-    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6" onClick={e=>e.stopPropagation()}>
-      <div className="flex items-center justify-between mb-4"><div className="font-bold text-gray-800">{title}</div><button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl font-bold">✕</button></div>
-      {children}
+function getWeeksForMonth(y,m){const ld=new Date(y,m,0).getDate();return[[1,7],[8,14],[15,21],[22,ld]].map(([s,e],i)=>{const sm=String(m).padStart(2,'0');return{key:`W${i+1}`,label:`W${i+1}（${m}/${s}–${m}/${e}）`,start:`${y}-${sm}-${String(s).padStart(2,'0')}`,end:`${y}-${sm}-${String(e).padStart(2,'0')}`};});}
+
+function getStaffEntries(name,data){const e=[];data.forEach(r=>{[1,2,3].forEach(i=>{if(r[`s${i}`]===name)e.push({date:r.date,weather:r.weather,c:r[`c${i}`]||0,h:r[`h${i}`]||0,b:r[`b${i}`]||0,remark:r[`r${i}`]||''});});});return e;}
+function getStaffList(data){const s=new Set();data.forEach(r=>{[1,2,3].forEach(i=>{if(r[`s${i}`])s.add(r[`s${i}`]);});});return Array.from(s).sort((a,b)=>{const ea=getStaffEntries(a,data),eb=getStaffEntries(b,data);return eb.reduce((s,e)=>s+e.c,0)-ea.reduce((s,e)=>s+e.c,0);});}
+function getStaffWeekly(name,data,weeks){const entries=getStaffEntries(name,data);return weeks.map(w=>{const wE=entries.filter(e=>e.date>=w.start&&e.date<=w.end);if(wE.length===0)return{...w,days:0,totalC:0,avgC:'-',avgH:'-',avgB:'-'};const totalC=wE.reduce((s,e)=>s+e.c,0);return{...w,days:wE.length,totalC,avgC:(totalC/wE.length).toFixed(1),avgH:(wE.reduce((s,e)=>s+e.h,0)/wE.length).toFixed(1),avgB:(wE.reduce((s,e)=>s+e.b,0)/wE.length).toFixed(1)};});}
+function getStaffMonthly(name,data){const entries=getStaffEntries(name,data);if(entries.length===0)return null;const totalC=entries.reduce((s,e)=>s+e.c,0);const remarks=entries.filter(e=>e.remark).map(e=>({date:e.date,text:e.remark}));const best=entries.reduce((a,b)=>b.c>a.c?b:a,entries[0]);return{days:entries.length,totalC,avgC:(totalC/entries.length).toFixed(1),avgH:(entries.reduce((s,e)=>s+e.h,0)/entries.length).toFixed(1),avgB:(entries.reduce((s,e)=>s+e.b,0)/entries.length).toFixed(1),remarks,bestDay:best};}
+function getWeeklyOverview(data,weeks){return weeks.map(w=>{const rows=data.filter(r=>r.date>=w.start&&r.date<=w.end&&r.weather!=='惡劣天氣');if(rows.length===0)return{...w,avgC:0,avgH:0,avgB:0,fgT:0,fgR:0,pct:'0%'};let tC=0,tH=0,tB=0,cnt=0,fgT=0,fgR=0;rows.forEach(r=>{[1,2,3].forEach(i=>{if(r[`s${i}`]){tC+=r[`c${i}`]||0;tH+=r[`h${i}`]||0;tB+=r[`b${i}`]||0;cnt++;}});fgT+=r.fgT||0;fgR+=r.fgR||0;});return{...w,avgC:cnt?(tC/cnt).toFixed(1):0,avgH:cnt?(tH/cnt).toFixed(1):0,avgB:cnt?(tB/cnt).toFixed(1):0,fgT,fgR,pct:fgT?(fgR/fgT*100).toFixed(1)+'%':'0%'};});}
+function getWeatherStats(data){const stats={};data.forEach(r=>{if(!stats[r.weather])stats[r.weather]={days:0,fgTs:[],fgRs:[],hrs:[],brs:[]};stats[r.weather].days++;if(r.fgT)stats[r.weather].fgTs.push(r.fgT);if(r.fgR)stats[r.weather].fgRs.push(r.fgR);[1,2,3].forEach(i=>{if(r[`h${i}`])stats[r.weather].hrs.push(r[`h${i}`]);if(r[`b${i}`])stats[r.weather].brs.push(r[`b${i}`]);});});return Object.entries(stats).map(([w,d])=>({weather:w,days:d.days,avgFgT:d.fgTs.length?Math.round(d.fgTs.reduce((a,b)=>a+b,0)/d.fgTs.length):'-',avgFgR:d.fgRs.length?Math.round(d.fgRs.reduce((a,b)=>a+b,0)/d.fgRs.length):'-',avgH:d.hrs.length?(d.hrs.reduce((a,b)=>a+b,0)/d.hrs.length).toFixed(1):'-',avgB:d.brs.length?(d.brs.reduce((a,b)=>a+b,0)/d.brs.length).toFixed(1):'-',pct:d.fgTs.length?(d.fgRs.reduce((a,b)=>a+b,0)/d.fgTs.reduce((a,b)=>a+b,0)*100).toFixed(1)+'%':'-'}));}
+function getICList(data){const s=new Set();data.forEach(r=>s.add(r.ic));return Array.from(s).sort();}
+function getICStats(icName,data){const records=data.filter(r=>r.ic===icName);const workRecs=records.filter(r=>r.weather!=='惡劣天氣');let totalCap=0,rovStaffCnt=0,fgT=0,fgR=0,tH=0,tB=0;workRecs.forEach(r=>{[1,2,3].forEach(i=>{if(r[`s${i}`]){totalCap+=r[`c${i}`]||0;tH+=r[`h${i}`]||0;tB+=r[`b${i}`]||0;rovStaffCnt++;}});fgT+=r.fgT||0;fgR+=r.fgR||0;});const totalHeadcount=rovStaffCnt+workRecs.length;return{totalDays:records.length,workDays:workRecs.length,cancelDays:records.length-workRecs.length,totalCap,rovStaffCnt,avgRovStaff:workRecs.length>0?(rovStaffCnt/workRecs.length).toFixed(1):'-',avgHeadcount:workRecs.length>0?(totalHeadcount/workRecs.length).toFixed(1):'-',avgCapPerStaff:rovStaffCnt>0?(totalCap/rovStaffCnt).toFixed(1):'-',avgCapPerDay:workRecs.length>0?(totalCap/workRecs.length).toFixed(1):'-',avgH:rovStaffCnt>0?(tH/rovStaffCnt).toFixed(1):'-',avgB:rovStaffCnt>0?(tB/rovStaffCnt).toFixed(1):'-',fgT,fgR,fgDailyAvg:workRecs.length>0?Math.round(fgT/workRecs.length):0,rovPct:fgT>0?(fgR/fgT*100).toFixed(1):0,rovPctStr:fgT>0?(fgR/fgT*100).toFixed(1)+'%':'-'};}
+function rankICs(data){const icList=getICList(data);const statsArr=icList.map(ic=>({name:ic,...getICStats(ic,data)})).filter(s=>s.workDays>0);if(statsArr.length===0)return[];const maxCap=Math.max(...statsArr.map(s=>parseFloat(s.avgCapPerDay)||0));const maxFgD=Math.max(...statsArr.map(s=>s.fgDailyAvg||0));const maxRov=Math.max(...statsArr.map(s=>parseFloat(s.rovPct)||0));const maxH=Math.max(...statsArr.map(s=>parseFloat(s.avgH)||0));const maxB=Math.max(...statsArr.map(s=>parseFloat(s.avgB)||0));return statsArr.map(s=>{const sCapDay=maxCap>0?((parseFloat(s.avgCapPerDay)||0)/maxCap)*30:0;const sFgD=maxFgD>0?((s.fgDailyAvg||0)/maxFgD)*25:0;const sRov=maxRov>0?((parseFloat(s.rovPct)||0)/maxRov)*20:0;const sH=maxH>0?((parseFloat(s.avgH)||0)/maxH)*15:0;const sB=maxB>0?((parseFloat(s.avgB)||0)/maxB)*10:0;const score=sCapDay+sFgD+sRov+sH+sB;return{...s,score:Math.round(score*10)/10,breakdown:{cap:Math.round(sCapDay*10)/10,fg:Math.round(sFgD*10)/10,rov:Math.round(sRov*10)/10,hit:Math.round(sH*10)/10,bring:Math.round(sB*10)/10}};}).sort((a,b)=>b.score-a.score);}
+function genICComment(ranked){if(!ranked||ranked.length===0)return'';const top=ranked[0];const parts=[`${top._sn} 整體表現最突出`];if(parseFloat(top.avgCapPerDay)>0)parts.push(`日均 Capture ${top.avgCapPerDay} 組`);if(top.fgDailyAvg>0)parts.push(`日均 FG $${top.fgDailyAvg.toLocaleString()}`);if(parseFloat(top.rovPct)>0)parts.push(`Roving 佔比 ${top.rovPctStr}`);let comment=parts.join('，');if(ranked.length>1){const last=ranked[ranked.length-1];const gap=(top.score-last.score).toFixed(1);comment+=`。與排尾 ${last._sn} 相差 ${gap} 分`;if(parseFloat(last.avgCapPerDay)<parseFloat(top.avgCapPerDay)*0.7){comment+=`，${last._sn} 日均 Capture 偏低（${last.avgCapPerDay}），建議跟進`;}}return comment+'。';}
+function getStaffUnderIC(icName,data){const map={};data.filter(r=>r.ic===icName&&r.weather!=='惡劣天氣').forEach(r=>{[1,2,3].forEach(i=>{const n=r[`s${i}`];if(n){if(!map[n])map[n]={days:0,tC:0,tH:0,tB:0};map[n].days++;map[n].tC+=r[`c${i}`]||0;map[n].tH+=r[`h${i}`]||0;map[n].tB+=r[`b${i}`]||0;}});});return Object.entries(map).map(([n,d])=>({name:n,days:d.days,totalC:d.tC,avgC:(d.tC/d.days).toFixed(1),avgH:(d.tH/d.days).toFixed(1),avgB:(d.tB/d.days).toFixed(1)})).sort((a,b)=>b.totalC-a.totalC);}
+function calcYearSummary(year){const months=AVAILABLE_MONTHS_BY_YEAR[year]||[];let totalCap=0,fgT=0,fgR=0,workDays=0,totalDays=0,staffCnt=0;months.forEach(m=>{const key=`${year}-${String(m).padStart(2,'0')}`;const d=ALL_DATA[key]||[];d.forEach(r=>{totalDays++;if(r.weather!=='惡劣天氣'){workDays++;[1,2,3].forEach(i=>{if(r[`s${i}`]){totalCap+=r[`c${i}`]||0;staffCnt++;}});fgT+=r.fgT||0;fgR+=r.fgR||0;}});});return{totalCap,fgT,fgR,workDays,totalDays,avgCap:staffCnt>0?(totalCap/staffCnt).toFixed(1):'-',rovPct:fgT>0?(fgR/fgT*100).toFixed(1):'-',months:months.length};}
+function getYearlyMonthly(year){const months=AVAILABLE_MONTHS_BY_YEAR[year]||[];return months.map(m=>{const key=`${year}-${String(m).padStart(2,'0')}`;const d=ALL_DATA[key]||[];const wd=d.filter(r=>r.weather!=='惡劣天氣');let tC=0,cnt=0,fgT=0,fgR=0;wd.forEach(r=>{[1,2,3].forEach(i=>{if(r[`s${i}`]){tC+=r[`c${i}`]||0;cnt++;}});fgT+=r.fgT||0;fgR+=r.fgR||0;});return{month:m,label:MONTHS_LABEL[m],totalDays:d.length,workDays:wd.length,totalCap:tC,avgCap:cnt>0?(tC/cnt).toFixed(1):'-',fgT,fgR,rovPct:fgT>0?(fgR/fgT*100).toFixed(1):'-'};});}
+function getYearlyStaffRank(year){const months=AVAILABLE_MONTHS_BY_YEAR[year]||[];const map={};months.forEach(m=>{const key=`${year}-${String(m).padStart(2,'0')}`;const d=ALL_DATA[key]||[];d.filter(r=>r.weather!=='惡劣天氣').forEach(r=>{[1,2,3].forEach(i=>{const n=r[`s${i}`];if(n){if(!map[n])map[n]={days:0,tC:0,tH:0,tB:0,months:new Set()};map[n].days++;map[n].tC+=r[`c${i}`]||0;map[n].tH+=r[`h${i}`]||0;map[n].tB+=r[`b${i}`]||0;map[n].months.add(m);}});});});return Object.entries(map).map(([n,d])=>({name:n,days:d.days,totalC:d.tC,avgC:(d.tC/d.days).toFixed(1),avgH:(d.tH/d.days).toFixed(1),avgB:(d.tB/d.days).toFixed(1),mths:d.months.size})).sort((a,b)=>b.totalC-a.totalC);}
+function getYearlyICRank(year){const months=AVAILABLE_MONTHS_BY_YEAR[year]||[];const map={};months.forEach(m=>{const key=`${year}-${String(m).padStart(2,'0')}`;const d=ALL_DATA[key]||[];d.forEach(r=>{const n=r.ic;if(!map[n])map[n]={days:0,workDays:0,tC:0,sCnt:0,fgT:0,fgR:0};map[n].days++;if(r.weather!=='惡劣天氣'){map[n].workDays++;[1,2,3].forEach(i=>{if(r[`s${i}`]){map[n].tC+=r[`c${i}`]||0;map[n].sCnt++;}});map[n].fgT+=r.fgT||0;map[n].fgR+=r.fgR||0;}});});return Object.entries(map).map(([n,d])=>{const totalHC=d.sCnt+d.workDays;return{name:n,days:d.days,workDays:d.workDays,totalCap:d.tC,avgHeadcount:d.workDays>0?(totalHC/d.workDays).toFixed(1):'-',avgCapPerStaff:d.sCnt>0?(d.tC/d.sCnt).toFixed(1):'-',avgCapPerDay:d.workDays>0?(d.tC/d.workDays).toFixed(1):'-',fgT:d.fgT,fgR:d.fgR,fgDailyAvg:d.workDays>0?Math.round(d.fgT/d.workDays):0,rovPct:d.fgT>0?(d.fgR/d.fgT*100).toFixed(1)+'%':'-'};}).sort((a,b)=>b.totalCap-a.totalCap);}
+
+// ═══════════════════════════════════════
+// 🚀 DASHBOARD WRAPPER (fetches data)
+// ═══════════════════════════════════════
+function Dashboard(){
+  const[ready,setReady]=useState(false);
+  const[err,setErr]=useState('');
+  const[loadedRosters,setLoadedRosters]=useState(null);
+
+  useEffect(()=>{
+    Promise.all([
+      fetch(APPS_SCRIPT_URL+'?action=getResponses').then(r=>r.json()),
+      fetch(APPS_SCRIPT_URL+'?action=getAllRosters').then(r=>r.json())
+    ]).then(([respRes,rosterRes])=>{
+      // Process rosters
+      const ics=(rosterRes.data?.ics||[]).map((r,i)=>({id:i+1,fullName:r.fullName,nickname:r.nickname,active:r.active===true||r.active==='TRUE'}));
+      const staff=(rosterRes.data?.staff||[]).map((r,i)=>({id:1000+i,fullName:r.fullName,nickname:r.nickname,active:r.active===true||r.active==='TRUE'}));
+      setLoadedRosters({ics,staff});
+
+      // Process responses
+      const rows=respRes.data||[];
+      if(rows.length===0){
+        ALL_DATA={};AVAILABLE_MONTHS_BY_YEAR={};AVAILABLE_YEARS=[];
+      }else{
+        const records=transformResponses(rows);
+        const{grouped,mby,years}=buildDataStructures(records);
+        ALL_DATA=grouped;
+        AVAILABLE_MONTHS_BY_YEAR=mby;
+        AVAILABLE_YEARS=years;
+      }
+      setReady(true);
+    }).catch(e=>{
+      console.error('載入失敗:',e);
+      setErr('數據載入失敗：'+e.message);
+    });
+  },[]);
+
+  if(err)return(
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+      <div className="bg-white rounded-2xl p-12 text-center border shadow-sm max-w-md">
+        <div className="text-5xl mb-4">❌</div>
+        <div className="text-lg font-bold text-gray-600 mb-2">載入失敗</div>
+        <div className="text-sm text-gray-400 mb-2">{err}</div>
+        <button onClick={()=>location.reload()} className="mt-4 bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-indigo-700">🔄 重試</button>
+      </div>
     </div>
-  </div>);
+  );
+
+  if(!ready)return(
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="text-5xl mb-4 animate-bounce">📊</div>
+        <div className="text-lg font-bold text-gray-500">載入數據中...</div>
+        <div className="text-sm text-gray-300 mt-2">正在連接 Google Sheets</div>
+      </div>
+    </div>
+  );
+
+  return <DashboardContent initICs={loadedRosters.ics} initStaff={loadedRosters.staff}/>;
 }
 
-function Dashboard(){
-  const [selYear,setSelYear]=useState(2026);
-  const [selMonth,setSelMonth]=useState(8);
-  const [tab,setTab]=useState(0);
-  const [selStaff,setSelStaff]=useState('Chan Ivan');
-  const [selIC,setSelIC]=useState('');
-  const [yearlyYear,setYearlyYear]=useState(2026);
-  const [showYoY,setShowYoY]=useState(false);
-  const [icRoster,setIcRoster]=useState(INIT_IC_ROSTER);
-  const [staffRoster,setStaffRoster]=useState(INIT_STAFF_ROSTER);
-  const [showAddModal,setShowAddModal]=useState(null);
-  const [newFull,setNewFull]=useState('');
-  const [newNick,setNewNick]=useState('');
-  const [toast,setToast]=useState('');
-  const [confirmDel,setConfirmDel]=useState(null);
+// ═══════════════════════════════════════
+// 📊 DASHBOARD CONTENT
+// ═══════════════════════════════════════
+function DashboardContent({initICs,initStaff}){
+  const latestYear=AVAILABLE_YEARS[AVAILABLE_YEARS.length-1]||new Date().getFullYear();
+  const latestMonths=AVAILABLE_MONTHS_BY_YEAR[latestYear]||[];
+  const latestMonth=latestMonths[latestMonths.length-1]||new Date().getMonth()+1;
 
-  const nextId=useMemo(()=>{const all=[...icRoster,...staffRoster];return all.length?Math.max(...all.map(r=>r.id))+1:1;},[icRoster,staffRoster]);
+  const[selYear,setSelYear]=useState(latestYear);
+  const[selMonth,setSelMonth]=useState(latestMonth);
+  const[tab,setTab]=useState(0);
+  const[selStaff,setSelStaff]=useState('');
+  const[selIC,setSelIC]=useState('');
+  const[yearlyYear,setYearlyYear]=useState(latestYear);
+  const[showYoY,setShowYoY]=useState(false);
+  const[icRoster,setIcRoster]=useState(initICs);
+  const[staffRoster,setStaffRoster]=useState(initStaff);
+  const[showAddModal,setShowAddModal]=useState(null);
+  const[newFull,setNewFull]=useState('');
+  const[newNick,setNewNick]=useState('');
+  const[toast,setToast]=useState('');
+  const[confirmDel,setConfirmDel]=useState(null);
+
   const nicknameMap=useMemo(()=>{const m={};[...icRoster,...staffRoster].forEach(r=>{m[r.fullName]=r.nickname;});return m;},[icRoster,staffRoster]);
   const sn=(name)=>nicknameMap[name]||name.split(' ').pop();
   const showToast=(msg)=>{setToast(msg);setTimeout(()=>setToast(''),2500);};
+  const wIcon=(w)=>w==='晴天'?'☀️':w==='間歇落雨'?'🌦️':'⛈️';
 
-  const toggleActive=(type,id)=>{
-    if(type==='ic'){setIcRoster(prev=>prev.map(r=>r.id===id?{...r,active:!r.active}:r));}
-    else{setStaffRoster(prev=>prev.map(r=>r.id===id?{...r,active:!r.active}:r));}
+  // ======= API-connected Roster Handlers =======
+  const toggleActive=async(type,id)=>{
+    const roster=type==='ic'?icRoster:staffRoster;
+    const item=roster.find(r=>r.id===id);if(!item)return;
+    if(type==='ic')setIcRoster(prev=>prev.map(r=>r.id===id?{...r,active:!r.active}:r));
+    else setStaffRoster(prev=>prev.map(r=>r.id===id?{...r,active:!r.active}:r));
+    try{await fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'updateRoster',rosterType:type,operation:'toggle',nickname:item.nickname})});}catch(e){console.error(e);}
   };
 
-  const handleAdd=()=>{
+  const handleAdd=async()=>{
     if(!newFull.trim()||!newNick.trim()){showToast('⚠️ 請填寫全名同顯示名');return;}
     const roster=showAddModal==='ic'?icRoster:staffRoster;
     if(roster.some(r=>r.fullName.toLowerCase()===newFull.trim().toLowerCase())){showToast('⚠️ 呢個名已經存在');return;}
-    const entry={id:nextId,fullName:newFull.trim(),nickname:newNick.trim(),active:true};
+    const entry={id:Date.now(),fullName:newFull.trim(),nickname:newNick.trim(),active:true};
     if(showAddModal==='ic')setIcRoster(prev=>[...prev,entry]);
     else setStaffRoster(prev=>[...prev,entry]);
-    showToast(`✅ 已新增 ${newNick.trim()}`);
+    showToast('✅ 已新增 '+newNick.trim());
+    try{await fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'updateRoster',rosterType:showAddModal,operation:'add',fullName:newFull.trim(),nickname:newNick.trim()})});}catch(e){console.error(e);}
     setNewFull('');setNewNick('');setShowAddModal(null);
   };
 
-  const handleDelete=()=>{
+  const handleDelete=async()=>{
     if(!confirmDel)return;
     if(confirmDel.type==='ic')setIcRoster(prev=>prev.filter(r=>r.id!==confirmDel.id));
     else setStaffRoster(prev=>prev.filter(r=>r.id!==confirmDel.id));
-    showToast(`🗑️ 已刪除 ${confirmDel.name}`);
+    showToast('🗑️ 已刪除 '+confirmDel.name);
+    try{await fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'updateRoster',rosterType:confirmDel.type,operation:'delete',nickname:confirmDel.name})});}catch(e){console.error(e);}
     setConfirmDel(null);
   };
 
@@ -218,11 +233,13 @@ function Dashboard(){
   const weeks=useMemo(()=>getWeeksForMonth(selYear,selMonth),[selYear,selMonth]);
   const hasData=data.length>0;
   const availableMonths=AVAILABLE_MONTHS_BY_YEAR[selYear]||[];
+  const hasAnyData=AVAILABLE_YEARS.length>0;
 
   const staffList=useMemo(()=>getStaffList(data),[dataKey]);
-  const staffEntries=getStaffEntries(selStaff,data);
-  const staffWeekly=getStaffWeekly(selStaff,data,weeks);
-  const staffMonthly=getStaffMonthly(selStaff,data);
+  const activeSelStaff=selStaff&&staffList.includes(selStaff)?selStaff:(staffList[0]||'');
+  const staffEntries=getStaffEntries(activeSelStaff,data);
+  const staffWeekly=getStaffWeekly(activeSelStaff,data,weeks);
+  const staffMonthly=getStaffMonthly(activeSelStaff,data);
   const weeklyOverview=getWeeklyOverview(data,weeks);
   const weatherStats=getWeatherStats(data);
 
@@ -243,78 +260,23 @@ function Dashboard(){
   const prevYearlyMonthly=useMemo(()=>hasPrevYear?getYearlyMonthly(prevYear):[],[yearlyYear]);
 
   const total=data.length;const workDays=data.filter(r=>r.weather!=='惡劣天氣').length;const totalFgT=data.filter(r=>r.fgT).reduce((a,r)=>a+r.fgT,0);const totalFgR=data.filter(r=>r.fgR).reduce((a,r)=>a+r.fgR,0);const totalCaptures=data.reduce((a,r)=>a+(r.c1||0)+(r.c2||0)+(r.c3||0),0);
-
   const staffBarData=staffList.slice(0,6).map(n=>{const e=getStaffEntries(n,data);return{name:sn(n),Captures:e.reduce((s,x)=>s+x.c,0)};});
   const weeklyChart=staffWeekly.filter(w=>w.days>0).map(w=>({name:w.key,'日均Cap':parseFloat(w.avgC),'Hit':parseFloat(w.avgH),'帶返去':parseFloat(w.avgB)}));
 
   const handleYearChange=(e)=>{const y=Number(e.target.value);setSelYear(y);const ms=AVAILABLE_MONTHS_BY_YEAR[y]||[];if(!ms.includes(selMonth)&&ms.length)setSelMonth(ms[ms.length-1]);};
-  const wIcon=(w)=>w==='晴天'?'☀️':w==='間歇落雨'?'🌦️':'⛈️';
 
-  const radarData=rankedICs.length>0?[
-    {dim:'日均Cap（30%）',...Object.fromEntries(rankedICs.map(r=>[sn(r.name),r.breakdown.cap]))},
-    {dim:'日均FG（25%）',...Object.fromEntries(rankedICs.map(r=>[sn(r.name),r.breakdown.fg]))},
-    {dim:'Roving%（20%）',...Object.fromEntries(rankedICs.map(r=>[sn(r.name),r.breakdown.rov]))},
-    {dim:'Hit率（15%）',...Object.fromEntries(rankedICs.map(r=>[sn(r.name),r.breakdown.hit]))},
-    {dim:'帶返去（10%）',...Object.fromEntries(rankedICs.map(r=>[sn(r.name),r.breakdown.bring]))},
-  ]:[];
+  const radarData=rankedICs.length>0?[{dim:'日均Cap（30%）',...Object.fromEntries(rankedICs.map(r=>[sn(r.name),r.breakdown.cap]))},{dim:'日均FG（25%）',...Object.fromEntries(rankedICs.map(r=>[sn(r.name),r.breakdown.fg]))},{dim:'Roving%（20%）',...Object.fromEntries(rankedICs.map(r=>[sn(r.name),r.breakdown.rov]))},{dim:'Hit率（15%）',...Object.fromEntries(rankedICs.map(r=>[sn(r.name),r.breakdown.hit]))},{dim:'帶返去（10%）',...Object.fromEntries(rankedICs.map(r=>[sn(r.name),r.breakdown.bring]))}]:[];
   const radarColors=['#6366f1','#f59e0b','#10b981','#ef4444','#3b82f6'];
 
-  const yoyMonthlyData=useMemo(()=>{if(!hasPrevYear)return[];const allMonths=new Set();yearlyMonthly.forEach(m=>allMonths.add(m.month));prevYearlyMonthly.forEach(m=>allMonths.add(m.month));return Array.from(allMonths).sort((a,b)=>a-b).map(m=>{const cur=yearlyMonthly.find(x=>x.month===m);const prev=prevYearlyMonthly.find(x=>x.month===m);return{month:m,label:MONTHS_LABEL[m],cur,prev};});},[yearlyYear]);
+  const yoyMonthlyData=useMemo(()=>{if(!hasPrevYear)return[];const allMonths=new Set();yearlyMonthly.forEach(m=>allMonths.add(m.month));prevYearlyMonthly.forEach(m=>allMonths.add(m.month));return Array.from(allMonths).sort((a,b)=>a-b).map(m=>({month:m,label:MONTHS_LABEL[m],cur:yearlyMonthly.find(x=>x.month===m),prev:prevYearlyMonthly.find(x=>x.month===m)}));},[yearlyYear]);
   const yoyChartCap=yoyMonthlyData.filter(d=>d.cur||d.prev).map(d=>({name:d.label,[yearlyYear]:d.cur?.totalCap||0,[prevYear]:d.prev?.totalCap||0}));
   const yoyChartFg=yoyMonthlyData.filter(d=>d.cur||d.prev).map(d=>({name:d.label,[yearlyYear]:d.cur?.fgT||0,[prevYear]:d.prev?.fgT||0}));
 
-  const RosterTable=({type,roster,activeList,inactiveList})=>(
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-bold text-gray-700">{type==='ic'?'🧑‍💼 IC 名單':'👤 Roving 同事名單'}</span>
-          <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-0.5 rounded-lg">{activeList.length} 啟用</span>
-          {inactiveList.length>0&&<span className="bg-gray-100 text-gray-500 text-xs font-bold px-2 py-0.5 rounded-lg">{inactiveList.length} 停用</span>}
-        </div>
-        <button onClick={()=>{setShowAddModal(type);setNewFull('');setNewNick('');}} className="bg-indigo-600 text-white text-xs font-bold px-4 py-2 rounded-xl hover:bg-indigo-700 transition-all shadow-sm">＋ 新增{type==='ic'?'IC':'同事'}</button>
-      </div>
-      <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
-        <table className="w-full text-sm">
-          <thead><tr className="border-b border-gray-200">
-            <th className="text-left p-2 text-xs font-semibold text-gray-500">全名</th>
-            <th className="text-left p-2 text-xs font-semibold text-gray-500">顯示名</th>
-            <th className="text-center p-2 text-xs font-semibold text-gray-500">Form 狀態</th>
-            <th className="text-center p-2 text-xs font-semibold text-gray-500">歷史數據</th>
-            <th className="text-center p-2 text-xs font-semibold text-gray-500">操作</th>
-          </tr></thead>
-          <tbody>
-            {roster.map(r=>{
-              const hasHistory=type==='ic'
-                ? Object.values(ALL_DATA).some(arr=>arr.some(d=>d.ic===r.fullName))
-                : Object.values(ALL_DATA).some(arr=>arr.some(d=>d.s1===r.fullName||d.s2===r.fullName||d.s3===r.fullName));
-              return(
-                <tr key={r.id} className={`border-b border-gray-100 transition-all ${r.active?'':'bg-gray-100 opacity-60'}`}>
-                  <td className="p-2 font-medium text-gray-700 text-xs">{r.fullName}</td>
-                  <td className="p-2"><span className={`px-2 py-0.5 rounded-lg text-xs font-bold ${r.active?'bg-indigo-100 text-indigo-700':'bg-gray-200 text-gray-500'}`}>{r.nickname}</span></td>
-                  <td className="p-2 text-center">
-                    <button onClick={()=>toggleActive(type,r.id)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${r.active?'bg-emerald-500':'bg-gray-300'}`}>
-                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${r.active?'translate-x-6':'translate-x-1'}`}/>
-                    </button>
-                  </td>
-                  <td className="p-2 text-center">
-                    {hasHistory?<span className="text-xs text-amber-600 font-medium">📊 有記錄</span>:<span className="text-xs text-gray-300">—</span>}
-                  </td>
-                  <td className="p-2 text-center">
-                    {hasHistory?(
-                      <span className="text-xs text-gray-300 cursor-not-allowed" title="有歷史數據，唔可以刪除">🔒</span>
-                    ):(
-                      <button onClick={()=>setConfirmDel({type,id:r.id,name:r.nickname})} className="text-xs text-rose-400 hover:text-rose-600 font-bold transition-all">🗑️</button>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+  const RosterTable=({type,roster,activeList,inactiveList})=>(<div className="space-y-3"><div className="flex items-center justify-between"><div className="flex items-center gap-3"><span className="text-sm font-bold text-gray-700">{type==='ic'?'🧑‍💼 IC 名單':'👤 Roving 同事名單'}</span><span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-0.5 rounded-lg">{activeList.length} 啟用</span>{inactiveList.length>0&&<span className="bg-gray-100 text-gray-500 text-xs font-bold px-2 py-0.5 rounded-lg">{inactiveList.length} 停用</span>}</div><button onClick={()=>{setShowAddModal(type);setNewFull('');setNewNick('');}} className="bg-indigo-600 text-white text-xs font-bold px-4 py-2 rounded-xl hover:bg-indigo-700 shadow-sm">＋ 新增{type==='ic'?'IC':'同事'}</button></div><div className="bg-gray-50 rounded-xl p-3 border border-gray-100"><table className="w-full text-sm"><thead><tr className="border-b border-gray-200"><th className="text-left p-2 text-xs font-semibold text-gray-500">全名</th><th className="text-left p-2 text-xs font-semibold text-gray-500">顯示名</th><th className="text-center p-2 text-xs font-semibold text-gray-500">狀態</th><th className="text-center p-2 text-xs font-semibold text-gray-500">數據</th><th className="text-center p-2 text-xs font-semibold text-gray-500">操作</th></tr></thead><tbody>{roster.map(r=>{const hasHistory=type==='ic'?Object.values(ALL_DATA).some(arr=>arr.some(d=>d.ic===r.fullName)):Object.values(ALL_DATA).some(arr=>arr.some(d=>d.s1===r.fullName||d.s2===r.fullName||d.s3===r.fullName));return(<tr key={r.id} className={`border-b border-gray-100 ${r.active?'':'bg-gray-100 opacity-60'}`}><td className="p-2 font-medium text-gray-700 text-xs">{r.fullName}</td><td className="p-2"><span className={`px-2 py-0.5 rounded-lg text-xs font-bold ${r.active?'bg-indigo-100 text-indigo-700':'bg-gray-200 text-gray-500'}`}>{r.nickname}</span></td><td className="p-2 text-center"><button onClick={()=>toggleActive(type,r.id)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${r.active?'bg-emerald-500':'bg-gray-300'}`}><span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ${r.active?'translate-x-6':'translate-x-1'}`}/></button></td><td className="p-2 text-center">{hasHistory?<span className="text-xs text-amber-600 font-medium">📊</span>:<span className="text-xs text-gray-300">—</span>}</td><td className="p-2 text-center">{hasHistory?<span className="text-xs text-gray-300">🔒</span>:<button onClick={()=>setConfirmDel({type,id:r.id,name:r.nickname})} className="text-xs text-rose-400 hover:text-rose-600 font-bold">🗑️</button>}</td></tr>);})}</tbody></table></div></div>);
 
+  // ═══════════════════════════════════════
+  // 🎨 RENDER
+  // ═══════════════════════════════════════
   return(
     <div className="min-h-screen bg-gray-50 p-3 md:p-6">
       <div className="max-w-5xl mx-auto">
@@ -322,180 +284,131 @@ function Dashboard(){
 
         <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-500 rounded-2xl p-6 mb-4 text-white relative overflow-hidden">
           <div className="absolute top-0 right-0 w-40 h-40 bg-white opacity-5 rounded-full -translate-y-10 translate-x-10"/>
-          <div className="relative"><div className="text-sm opacity-70 mb-1 font-medium">📊 Roving Performance Dashboard</div><div className="text-2xl font-bold mb-1">後台數據總覽</div><div className="text-sm opacity-60">Manager View — 選擇年份月份查看團隊記錄</div></div>
+          <div className="relative"><div className="text-sm opacity-70 mb-1 font-medium">📊 Roving Performance Dashboard</div><div className="text-2xl font-bold mb-1">後台數據總覽</div><div className="text-sm opacity-60">Manager View · 數據來自 Google Sheets 即時同步</div></div>
         </div>
 
+        {!hasAnyData&&tab<7?(
+          <div className="bg-white rounded-2xl p-16 text-center border border-gray-100 shadow-sm">
+            <div className="text-5xl mb-4">📭</div>
+            <div className="text-lg font-bold text-gray-500 mb-2">暫時未有任何數據</div>
+            <div className="text-sm text-gray-400 mb-6">請用 Daily Report Form 提交第一份日報</div>
+            <a href="form.html" className="inline-block bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-indigo-700">📝 去填 Form</a>
+          </div>
+        ):(
+        <>
         <div className="bg-white rounded-2xl p-4 mb-4 border border-gray-100 shadow-sm flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-2"><span className="text-sm font-bold text-gray-500">📅 年份</span><select value={selYear} onChange={handleYearChange} className="bg-gray-50 border border-gray-200 text-gray-700 font-semibold text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-300 cursor-pointer">{AVAILABLE_YEARS.map(y=><option key={y} value={y}>{y} 年</option>)}</select></div>
+          <div className="flex items-center gap-2"><span className="text-sm font-bold text-gray-500">📅 年份</span><select value={selYear} onChange={handleYearChange} className="bg-gray-50 border border-gray-200 text-gray-700 font-semibold text-sm rounded-xl px-4 py-2.5 cursor-pointer">{AVAILABLE_YEARS.map(y=><option key={y} value={y}>{y} 年</option>)}</select></div>
           <div className="w-px h-8 bg-gray-200 hidden md:block"/>
-          <div className="flex items-center gap-2"><span className="text-sm font-bold text-gray-500">🗓️ 月份</span><select value={selMonth} onChange={(e)=>setSelMonth(Number(e.target.value))} className="bg-gray-50 border border-gray-200 text-gray-700 font-semibold text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-300 cursor-pointer">{availableMonths.map(m=><option key={m} value={m}>{m} 月</option>)}</select></div>
-          {tab!==5&&tab!==7&&<div className="ml-auto"><span className="text-xs bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg font-bold">{selYear} 年 {MONTHS_LABEL[selMonth]}</span></div>}
-          {tab===5&&<div className="ml-auto"><span className="text-xs bg-purple-50 text-purple-600 px-3 py-1.5 rounded-lg font-bold">📆 {yearlyYear} 年度總覽</span></div>}
-          {tab===7&&<div className="ml-auto"><span className="text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg font-bold">⚙️ 人員管理</span></div>}
+          <div className="flex items-center gap-2"><span className="text-sm font-bold text-gray-500">🗓️ 月份</span><select value={selMonth} onChange={e=>setSelMonth(Number(e.target.value))} className="bg-gray-50 border border-gray-200 text-gray-700 font-semibold text-sm rounded-xl px-4 py-2.5 cursor-pointer">{availableMonths.map(m=><option key={m} value={m}>{m} 月</option>)}</select></div>
+          <div className="ml-auto"><span className="text-xs bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg font-bold">{tab===5?`📆 ${yearlyYear} 年度`:tab===7?'⚙️ 人員管理':`${selYear} 年 ${MONTHS_LABEL[selMonth]}`}</span></div>
         </div>
 
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-          {TABS.map((t,i)=>(
-            <button key={i} onClick={()=>setTab(i)} className={`whitespace-nowrap px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${tab===i?i===7?'bg-gray-800 text-white shadow-lg shadow-gray-300':'bg-indigo-600 text-white shadow-lg shadow-indigo-200':'bg-white text-gray-500 hover:bg-gray-100 border border-gray-100'}`}>{t}</button>
-          ))}
+          {TABS.map((t,i)=>(<button key={i} onClick={()=>setTab(i)} className={`whitespace-nowrap px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${tab===i?i===7?'bg-gray-800 text-white shadow-lg':'bg-indigo-600 text-white shadow-lg shadow-indigo-200':'bg-white text-gray-500 hover:bg-gray-100 border border-gray-100'}`}>{t}</button>))}
         </div>
 
         {!hasData&&tab<6&&(
-          <div className="bg-white rounded-2xl p-16 text-center border border-gray-100 shadow-sm"><div className="text-5xl mb-4">📭</div><div className="text-lg font-bold text-gray-400 mb-2">{selYear} 年 {MONTHS_LABEL[selMonth]} 暫無數據</div><div className="text-sm text-gray-300">請選擇其他月份</div></div>
+          <div className="bg-white rounded-2xl p-16 text-center border border-gray-100 shadow-sm"><div className="text-5xl mb-4">📭</div><div className="text-lg font-bold text-gray-400 mb-2">{selYear} 年 {MONTHS_LABEL[selMonth]} 暫無數據</div><div className="text-sm text-gray-300">請選擇其他月份或提交日報</div></div>
         )}
 
-        {hasData&&tab===0&&(
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <StatCard icon="📅" label="總記錄日數" value={total} sub={`工作日 ${workDays} · 惡劣天氣 ${total-workDays}`} color="indigo"/>
-              <StatCard icon="📸" label="總 Captures" value={totalCaptures} color="amber"/>
-              <StatCard icon="💰" label="FG Cart 總收入" value={`$${totalFgT.toLocaleString()}`} color="green"/>
-              <StatCard icon="🎯" label="Roving 佔比" value={totalFgT?`${(totalFgR/totalFgT*100).toFixed(1)}%`:'—'} sub={`Roving $${totalFgR.toLocaleString()}`} color="blue"/>
-            </div>
-            <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">🏆 同事 Captures 排名（{MONTHS_LABEL[selMonth]}）</div><ResponsiveContainer width="100%" height={200}><BarChart data={staffBarData} barGap={4}><CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/><XAxis dataKey="name" tick={{fontSize:11}}/><YAxis tick={{fontSize:11}}/><Tooltip/><Bar dataKey="Captures" fill="#6366f1" radius={[6,6,0,0]}/></BarChart></ResponsiveContainer></div>
+        {/* ===== TAB 0: 總覽 ===== */}
+        {hasData&&tab===0&&(<div className="space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3"><StatCard icon="📅" label="總記錄日數" value={total} sub={`工作日 ${workDays} · 惡劣天氣 ${total-workDays}`} color="indigo"/><StatCard icon="📸" label="總 Captures" value={totalCaptures} color="amber"/><StatCard icon="💰" label="FG Cart 總收入" value={`$${totalFgT.toLocaleString()}`} color="green"/><StatCard icon="🎯" label="Roving 佔比" value={totalFgT?`${(totalFgR/totalFgT*100).toFixed(1)}%`:'—'} sub={`Roving $${totalFgR.toLocaleString()}`} color="blue"/></div>
+          <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">🏆 同事 Captures 排名（{MONTHS_LABEL[selMonth]}）</div><ResponsiveContainer width="100%" height={200}><BarChart data={staffBarData} barGap={4}><CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/><XAxis dataKey="name" tick={{fontSize:11}}/><YAxis tick={{fontSize:11}}/><Tooltip/><Bar dataKey="Captures" fill="#6366f1" radius={[6,6,0,0]}/></BarChart></ResponsiveContainer></div>
+        </div>)}
+
+        {/* ===== TAB 1: 同事 ===== */}
+        {hasData&&tab===1&&(<div className="space-y-4">
+          <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-3 text-sm">👤 選擇同事</div><div className="flex flex-wrap gap-2">{staffList.map(s=>(<button key={s} onClick={()=>setSelStaff(s)} className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all ${activeSelStaff===s?'bg-indigo-600 text-white shadow-md':'bg-gray-50 text-gray-500 hover:bg-gray-100 border border-gray-100'}`}>{sn(s)}</button>))}</div></div>
+          {staffMonthly?(<>
+            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-5 border border-indigo-100"><div className="flex items-center justify-between mb-4"><div className="font-bold text-indigo-700 text-sm">📆 {MONTHS_LABEL[selMonth]} 總結 — {sn(activeSelStaff)}</div><div className="bg-white text-indigo-600 text-xs font-bold px-3 py-1 rounded-lg shadow-sm">共 {staffMonthly.days} 日</div></div><div className="grid grid-cols-2 md:grid-cols-5 gap-3"><div className="bg-white rounded-xl p-3 text-center shadow-sm"><div className="text-xs text-gray-400 mb-1">總Cap</div><div className="text-2xl font-bold text-indigo-600">{staffMonthly.totalC}</div></div><div className="bg-white rounded-xl p-3 text-center shadow-sm"><div className="text-xs text-gray-400 mb-1">日均Cap</div><div className="text-2xl font-bold text-amber-600">{staffMonthly.avgC}</div></div><div className="bg-white rounded-xl p-3 text-center shadow-sm"><div className="text-xs text-gray-400 mb-1">Hit Rate</div><Stars val={Math.round(parseFloat(staffMonthly.avgH))}/><div className="text-xs text-gray-400">{staffMonthly.avgH}</div></div><div className="bg-white rounded-xl p-3 text-center shadow-sm"><div className="text-xs text-gray-400 mb-1">帶返去</div><Stars val={Math.round(parseFloat(staffMonthly.avgB))}/><div className="text-xs text-gray-400">{staffMonthly.avgB}</div></div><div className="bg-white rounded-xl p-3 text-center shadow-sm"><div className="text-xs text-gray-400 mb-1">最高單日</div><div className="text-2xl font-bold text-rose-500">{staffMonthly.bestDay.c}</div><div className="text-xs text-gray-400">{staffMonthly.bestDay.date.slice(5)}</div></div></div></div>
+            <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">📊 每週表現</div><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="bg-gray-50"><th className="text-left p-3 rounded-l-lg font-semibold text-gray-500 text-xs">週次</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">出勤</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">總Cap</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">日均</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">Hit</th><th className="text-center p-3 rounded-r-lg font-semibold text-gray-500 text-xs">帶返去</th></tr></thead><tbody>{staffWeekly.map((w,i)=>(<tr key={i} className={`border-b border-gray-50 ${w.days===0?'opacity-40':''}`}><td className="p-3 font-semibold text-gray-700 text-xs">{w.label}</td><td className="p-3 text-center">{w.days>0?<span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-lg text-xs font-bold">{w.days}日</span>:'—'}</td><td className="p-3 text-center font-bold text-indigo-600">{w.days>0?w.totalC:'—'}</td><td className="p-3 text-center font-bold text-amber-600">{w.avgC!=='-'?w.avgC:'—'}<TrendArrow weekly={staffWeekly.slice(0,i+1)} metric="avgC"/></td><td className="p-3 text-center">{w.avgH!=='-'?<><Stars val={Math.round(parseFloat(w.avgH))}/><span className="text-xs text-gray-400 ml-1">{w.avgH}</span></>:'—'}</td><td className="p-3 text-center">{w.avgB!=='-'?<><Stars val={Math.round(parseFloat(w.avgB))}/><span className="text-xs text-gray-400 ml-1">{w.avgB}</span></>:'—'}</td></tr>))}</tbody></table></div></div>
+            {weeklyChart.length>1&&<div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">📈 每週趨勢</div><ResponsiveContainer width="100%" height={200}><LineChart data={weeklyChart}><CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/><XAxis dataKey="name" tick={{fontSize:12}}/><YAxis tick={{fontSize:12}}/><Tooltip/><Legend iconSize={10} wrapperStyle={{fontSize:12}}/><Line type="monotone" dataKey="日均Cap" stroke="#6366f1" strokeWidth={2.5} dot={{r:5,fill:'#6366f1'}}/><Line type="monotone" dataKey="Hit" stroke="#f59e0b" strokeWidth={2} dot={{r:4,fill:'#f59e0b'}}/><Line type="monotone" dataKey="帶返去" stroke="#10b981" strokeWidth={2} dot={{r:4,fill:'#10b981'}}/></LineChart></ResponsiveContainer></div>}
+            <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-3 text-sm">📅 每日記錄</div><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="bg-gray-50"><th className="text-left p-3 rounded-l-lg font-semibold text-gray-500 text-xs">日期</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">天氣</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">Cap</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">Hit</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">帶返去</th><th className="text-left p-3 rounded-r-lg font-semibold text-gray-500 text-xs">Remarks</th></tr></thead><tbody>{staffEntries.map((e,idx)=>(<tr key={idx} className="border-b border-gray-50 hover:bg-gray-50"><td className="p-3 text-gray-700 font-medium">{e.date.slice(5)}</td><td className="p-3 text-center">{wIcon(e.weather)}</td><td className="p-3 text-center font-bold text-indigo-600">{e.c}</td><td className="p-3 text-center"><Stars val={e.h}/></td><td className="p-3 text-center"><Stars val={e.b}/></td><td className="p-3 text-gray-400 text-xs">{e.remark||'—'}</td></tr>))}</tbody></table></div></div>
+            {staffMonthly.remarks.length>0&&<div className="bg-amber-50 rounded-2xl p-5 border border-amber-100"><div className="font-bold text-amber-700 mb-3 text-sm">📝 Remarks</div>{staffMonthly.remarks.map((rm,i)=>(<div key={i} className="flex gap-3 items-start mb-2 bg-white rounded-xl px-4 py-3 border border-amber-100"><span className="text-xs text-amber-500 font-mono whitespace-nowrap mt-0.5">{rm.date.slice(5)}</span><span className="text-sm text-gray-600">{rm.text}</span></div>))}</div>}
+          </>):(<div className="bg-white rounded-2xl p-12 text-center border border-gray-100"><div className="text-3xl mb-3">🔍</div><div className="text-gray-400 font-semibold">呢位同事喺 {MONTHS_LABEL[selMonth]} 暫無記錄</div></div>)}
+        </div>)}
+
+        {/* ===== TAB 2: IC ===== */}
+        {hasData&&tab===2&&(<div className="space-y-4">
+          <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-3 text-sm">🧑‍💼 選擇 IC</div><div className="flex flex-wrap gap-2">{icList.map(ic=>(<button key={ic} onClick={()=>setSelIC(ic)} className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all ${activeIC===ic?'bg-purple-600 text-white shadow-md':'bg-gray-50 text-gray-500 hover:bg-gray-100 border border-gray-100'}`}>{sn(ic)}</button>))}</div></div>
+          <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">📊 全 IC 月度對比</div><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="bg-gray-50"><th className="text-center p-3 rounded-l-lg text-xs font-semibold text-gray-500">#</th><th className="text-left p-3 text-xs font-semibold text-gray-500">IC</th><th className="text-center p-3 text-xs font-semibold text-gray-500">評分</th><th className="text-center p-3 text-xs font-semibold text-gray-500">工作日</th><th className="text-center p-3 text-xs font-semibold text-gray-500">人手</th><th className="text-center p-3 text-xs font-semibold text-gray-500">總Cap</th><th className="text-center p-3 text-xs font-semibold text-gray-500">日均Cap</th><th className="text-center p-3 text-xs font-semibold text-gray-500">FG日均</th><th className="text-center p-3 rounded-r-lg text-xs font-semibold text-gray-500">Rov%</th></tr></thead><tbody>{rankedICs.map((s,i)=>(<tr key={s.name} className={`border-b border-gray-50 hover:bg-gray-50 cursor-pointer ${activeIC===s.name?'bg-purple-50':''}`} onClick={()=>setSelIC(s.name)}><td className="p-3 text-center text-lg">{rankMedal(i)}</td><td className="p-3 font-semibold text-gray-700 text-xs">{sn(s.name)}</td><td className="p-3 text-center"><span className={`px-2 py-1 rounded-lg text-xs font-black ${i===0?'bg-yellow-100 text-yellow-700':i<3?'bg-gray-100 text-gray-600':'bg-gray-50 text-gray-500'}`}>{s.score}</span></td><td className="p-3 text-center">{s.workDays}</td><td className="p-3 text-center"><span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-lg text-xs font-bold">{s.avgHeadcount}</span></td><td className="p-3 text-center font-bold text-indigo-600">{s.totalCap}</td><td className="p-3 text-center font-bold text-amber-600">{s.avgCapPerDay}</td><td className="p-3 text-center font-semibold text-blue-600">${s.fgDailyAvg.toLocaleString()}</td><td className="p-3 text-center"><span className={`px-2 py-1 rounded-lg text-xs font-bold ${parseFloat(s.rovPctStr)>=55?'bg-emerald-100 text-emerald-700':'bg-amber-100 text-amber-700'}`}>{s.rovPctStr}</span></td></tr>))}</tbody></table></div></div>
+          {icStats&&<><div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl p-5 border border-purple-100"><div className="font-bold text-purple-700 text-sm mb-4">🧑‍💼 {sn(activeIC)} 詳情</div><div className="grid grid-cols-2 md:grid-cols-5 gap-3"><StatCard icon="📅" label="工作日" value={icStats.workDays} color="purple"/><StatCard icon="👥" label="平均人手" value={icStats.avgHeadcount} color="indigo"/><StatCard icon="📸" label="總Cap" value={icStats.totalCap} sub={`人均 ${icStats.avgCapPerStaff}`} color="amber"/><StatCard icon="💰" label="FG日均" value={`$${icStats.fgDailyAvg.toLocaleString()}`} color="green"/><StatCard icon="🎯" label="Rov%" value={icStats.rovPctStr} color="blue"/></div></div>
+          <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">👥 同事表現</div><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="bg-gray-50"><th className="text-left p-3 rounded-l-lg text-xs font-semibold text-gray-500">同事</th><th className="text-center p-3 text-xs font-semibold text-gray-500">日數</th><th className="text-center p-3 text-xs font-semibold text-gray-500">總Cap</th><th className="text-center p-3 text-xs font-semibold text-gray-500">日均</th><th className="text-center p-3 text-xs font-semibold text-gray-500">Hit</th><th className="text-center p-3 rounded-r-lg text-xs font-semibold text-gray-500">帶返去</th></tr></thead><tbody>{icStaffList.map((s,i)=>(<tr key={i} className="border-b border-gray-50"><td className="p-3 font-semibold text-gray-700 text-xs">{rankMedal(i)} {sn(s.name)}</td><td className="p-3 text-center"><span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-lg text-xs font-bold">{s.days}日</span></td><td className="p-3 text-center font-bold text-indigo-600">{s.totalC}</td><td className="p-3 text-center font-bold text-amber-600">{s.avgC}</td><td className="p-3 text-center"><Stars val={Math.round(parseFloat(s.avgH))}/></td><td className="p-3 text-center"><Stars val={Math.round(parseFloat(s.avgB))}/></td></tr>))}</tbody></table></div></div></>}
+          {rankedICs.length>0&&radarData.length>0&&<div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-semibold text-gray-600 text-sm mb-2">📊 IC 雷達圖</div><ResponsiveContainer width="100%" height={260}><RadarChart data={radarData} cx="50%" cy="50%" outerRadius="70%"><PolarGrid stroke="#e5e7eb"/><PolarAngleAxis dataKey="dim" tick={{fontSize:9,fill:'#6b7280'}}/><PolarRadiusAxis tick={{fontSize:9}} domain={[0,'auto']}/>{rankedICs.map((ic,i)=>(<Radar key={ic.name} name={sn(ic.name)} dataKey={sn(ic.name)} stroke={radarColors[i%5]} fill={radarColors[i%5]} fillOpacity={0.1} strokeWidth={2}/>))}<Legend iconSize={10} wrapperStyle={{fontSize:11}}/><Tooltip/></RadarChart></ResponsiveContainer></div>}
+        </div>)}
+
+        {/* ===== TAB 3: 每週 ===== */}
+        {hasData&&tab===3&&(<div className="space-y-4">
+          <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">📅 每週數據</div><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="bg-gray-50"><th className="text-left p-3 rounded-l-lg text-xs font-semibold text-gray-500">週次</th><th className="text-center p-3 text-xs font-semibold text-gray-500">日均Cap</th><th className="text-center p-3 text-xs font-semibold text-gray-500">Hit</th><th className="text-center p-3 text-xs font-semibold text-gray-500">帶返去</th><th className="text-center p-3 text-xs font-semibold text-gray-500">FG總</th><th className="text-center p-3 text-xs font-semibold text-gray-500">Roving</th><th className="text-center p-3 rounded-r-lg text-xs font-semibold text-gray-500">佔比</th></tr></thead><tbody>{weeklyOverview.map((w,i)=>(<tr key={i} className="border-b border-gray-50 hover:bg-gray-50"><td className="p-3 font-semibold text-gray-700 text-xs">{w.label}</td><td className="p-3 text-center font-bold text-indigo-600">{w.avgC}</td><td className="p-3 text-center"><Stars val={Math.round(parseFloat(w.avgH))}/></td><td className="p-3 text-center"><Stars val={Math.round(parseFloat(w.avgB))}/></td><td className="p-3 text-center">${w.fgT.toLocaleString()}</td><td className="p-3 text-center text-emerald-600 font-semibold">${w.fgR.toLocaleString()}</td><td className="p-3 text-center"><span className={`px-2 py-1 rounded-lg text-xs font-bold ${parseFloat(w.pct)>=60?'bg-emerald-100 text-emerald-700':'bg-amber-100 text-amber-700'}`}>{w.pct}</span></td></tr>))}</tbody></table></div></div>
+          <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">💰 每週收入</div><ResponsiveContainer width="100%" height={220}><BarChart data={weeklyOverview.map(w=>({name:w.key,'FG總':w.fgT,'Roving':w.fgR}))}><CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/><XAxis dataKey="name" tick={{fontSize:12}}/><YAxis tick={{fontSize:11}}/><Tooltip/><Legend iconSize={10} wrapperStyle={{fontSize:12}}/><Bar dataKey="FG總" fill="#c7d2fe" radius={[6,6,0,0]}/><Bar dataKey="Roving" fill="#6366f1" radius={[6,6,0,0]}/></BarChart></ResponsiveContainer></div>
+        </div>)}
+
+        {/* ===== TAB 4: 天氣 ===== */}
+        {hasData&&tab===4&&(<div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">🌦️ 天氣分佈</div><ResponsiveContainer width="100%" height={220}><PieChart><Pie data={weatherStats.map(w=>({name:`${wIcon(w.weather)} ${w.weather} ${w.days}日`,value:w.days}))} cx="50%" cy="50%" innerRadius={45} outerRadius={70} paddingAngle={4} dataKey="value">{weatherStats.map((_,i)=><Cell key={i} fill={pieColors[i]}/>)}</Pie><Tooltip/><Legend iconType="circle" iconSize={10} wrapperStyle={{fontSize:11}}/></PieChart></ResponsiveContainer></div>
+            <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">💰 天氣×收入</div><ResponsiveContainer width="100%" height={220}><BarChart data={weatherStats.filter(w=>w.avgFgT!=='-').map(w=>({name:w.weather,'平均總收入':w.avgFgT,'平均Roving':w.avgFgR}))}><CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/><XAxis dataKey="name" tick={{fontSize:11}}/><YAxis tick={{fontSize:11}}/><Tooltip/><Legend iconSize={10} wrapperStyle={{fontSize:11}}/><Bar dataKey="平均總收入" fill="#c7d2fe" radius={[6,6,0,0]}/><Bar dataKey="平均Roving" fill="#6366f1" radius={[6,6,0,0]}/></BarChart></ResponsiveContainer></div>
           </div>
-        )}
+          <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">📊 天氣總覽</div><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="bg-gray-50"><th className="text-left p-3 rounded-l-lg text-xs font-semibold text-gray-500">天氣</th><th className="text-center p-3 text-xs font-semibold text-gray-500">日數</th><th className="text-center p-3 text-xs font-semibold text-gray-500">Hit</th><th className="text-center p-3 text-xs font-semibold text-gray-500">帶返去</th><th className="text-center p-3 text-xs font-semibold text-gray-500">FG均</th><th className="text-center p-3 text-xs font-semibold text-gray-500">Rov均</th><th className="text-center p-3 rounded-r-lg text-xs font-semibold text-gray-500">佔比</th></tr></thead><tbody>{weatherStats.map((w,i)=>(<tr key={i} className="border-b border-gray-50"><td className="p-3 font-semibold">{wIcon(w.weather)} {w.weather}</td><td className="p-3 text-center font-bold">{w.days}</td><td className="p-3 text-center">{w.avgH!=='-'?<Stars val={Math.round(parseFloat(w.avgH))}/>:'—'}</td><td className="p-3 text-center">{w.avgB!=='-'?<Stars val={Math.round(parseFloat(w.avgB))}/>:'—'}</td><td className="p-3 text-center">{w.avgFgT!=='-'?`$${w.avgFgT.toLocaleString()}`:'—'}</td><td className="p-3 text-center text-emerald-600">{w.avgFgR!=='-'?`$${w.avgFgR.toLocaleString()}`:'—'}</td><td className="p-3 text-center"><span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold">{w.pct}</span></td></tr>))}</tbody></table></div></div>
+        </div>)}
 
-        {hasData&&tab===1&&(
+        {/* ===== TAB 5: 年度 ===== */}
+        {tab===5&&(<div className="space-y-4">
+          <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2"><span className="text-sm font-bold text-gray-500">📆 年度</span><select value={yearlyYear} onChange={e=>{setYearlyYear(Number(e.target.value));setShowYoY(false);}} className="bg-gray-50 border border-gray-200 text-gray-700 font-semibold text-sm rounded-xl px-4 py-2.5 cursor-pointer">{AVAILABLE_YEARS.map(y=><option key={y} value={y}>{y} 年</option>)}</select></div>
+            {hasPrevYear&&<button onClick={()=>setShowYoY(!showYoY)} className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${showYoY?'bg-teal-500 text-white shadow-lg':'bg-gray-50 text-gray-500 border border-gray-200'}`}>📊 YoY</button>}
+          </div>
+          {!showYoY&&<>
+            <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl p-5 border border-purple-100"><div className="font-bold text-purple-700 text-lg mb-4">📆 {yearlyYear} 年度</div><div className="grid grid-cols-2 md:grid-cols-4 gap-3"><StatCard icon="📅" label="工作日" value={curYearSummary.workDays} color="purple"/><StatCard icon="📸" label="總Cap" value={curYearSummary.totalCap} color="amber"/><StatCard icon="💰" label="FG總" value={`$${curYearSummary.fgT.toLocaleString()}`} color="green"/><StatCard icon="🎯" label="Rov%" value={curYearSummary.fgT>0?curYearSummary.rovPct+'%':'—'} color="blue"/></div></div>
+            <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">📊 每月</div><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="bg-gray-50"><th className="text-left p-3 rounded-l-lg text-xs font-semibold text-gray-500">月份</th><th className="text-center p-3 text-xs font-semibold text-gray-500">工作日</th><th className="text-center p-3 text-xs font-semibold text-gray-500">總Cap</th><th className="text-center p-3 text-xs font-semibold text-gray-500">人均</th><th className="text-center p-3 text-xs font-semibold text-gray-500">FG總</th><th className="text-center p-3 text-xs font-semibold text-gray-500">Rov</th><th className="text-center p-3 rounded-r-lg text-xs font-semibold text-gray-500">佔比</th></tr></thead><tbody>{yearlyMonthly.map((m,i)=>(<tr key={i} className="border-b border-gray-50"><td className="p-3 font-semibold">{m.label}</td><td className="p-3 text-center">{m.workDays}日</td><td className="p-3 text-center font-bold text-indigo-600">{m.totalCap}</td><td className="p-3 text-center font-bold text-amber-600">{m.avgCap}</td><td className="p-3 text-center">${m.fgT.toLocaleString()}</td><td className="p-3 text-center text-emerald-600">${m.fgR.toLocaleString()}</td><td className="p-3 text-center"><span className="px-2 py-1 rounded-lg text-xs font-bold bg-indigo-100 text-indigo-700">{m.rovPct}%</span></td></tr>))}</tbody></table></div></div>
+            {yearlyMonthly.length>1&&<div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">📈 趨勢</div><ResponsiveContainer width="100%" height={200}><LineChart data={yearlyMonthly.map(m=>({name:m.label,Captures:m.totalCap}))}><CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/><XAxis dataKey="name" tick={{fontSize:12}}/><YAxis tick={{fontSize:11}}/><Tooltip/><Line type="monotone" dataKey="Captures" stroke="#6366f1" strokeWidth={2.5} dot={{r:5,fill:'#6366f1'}}/></LineChart></ResponsiveContainer></div>}
+            <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">🏆 年度同事排名</div><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="bg-gray-50"><th className="text-left p-3 rounded-l-lg text-xs font-semibold text-gray-500">#</th><th className="text-left p-3 text-xs font-semibold text-gray-500">同事</th><th className="text-center p-3 text-xs font-semibold text-gray-500">日數</th><th className="text-center p-3 text-xs font-semibold text-gray-500">總Cap</th><th className="text-center p-3 text-xs font-semibold text-gray-500">日均</th><th className="text-center p-3 text-xs font-semibold text-gray-500">Hit</th><th className="text-center p-3 rounded-r-lg text-xs font-semibold text-gray-500">帶返去</th></tr></thead><tbody>{yearlyStaff.map((s,i)=>(<tr key={i} className="border-b border-gray-50"><td className="p-3 text-xs">{rankMedal(i)}</td><td className="p-3 font-semibold text-xs">{sn(s.name)}</td><td className="p-3 text-center">{s.days}</td><td className="p-3 text-center font-bold text-indigo-600">{s.totalC}</td><td className="p-3 text-center font-bold text-amber-600">{s.avgC}</td><td className="p-3 text-center"><Stars val={Math.round(parseFloat(s.avgH))}/></td><td className="p-3 text-center"><Stars val={Math.round(parseFloat(s.avgB))}/></td></tr>))}</tbody></table></div></div>
+            <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">🧑‍💼 年度 IC</div><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="bg-gray-50"><th className="text-left p-3 rounded-l-lg text-xs font-semibold text-gray-500">IC</th><th className="text-center p-3 text-xs font-semibold text-gray-500">工作日</th><th className="text-center p-3 text-xs font-semibold text-gray-500">人手</th><th className="text-center p-3 text-xs font-semibold text-gray-500">總Cap</th><th className="text-center p-3 text-xs font-semibold text-gray-500">人均</th><th className="text-center p-3 text-xs font-semibold text-gray-500">FG日均</th><th className="text-center p-3 rounded-r-lg text-xs font-semibold text-gray-500">Rov%</th></tr></thead><tbody>{yearlyIC.map((ic,i)=>(<tr key={i} className="border-b border-gray-50"><td className="p-3 font-semibold text-xs">{rankMedal(i)} {sn(ic.name)}</td><td className="p-3 text-center">{ic.workDays}</td><td className="p-3 text-center"><span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-lg text-xs font-bold">{ic.avgHeadcount}</span></td><td className="p-3 text-center font-bold text-indigo-600">{ic.totalCap}</td><td className="p-3 text-center font-bold text-amber-600">{ic.avgCapPerStaff}</td><td className="p-3 text-center text-blue-600">${ic.fgDailyAvg.toLocaleString()}</td><td className="p-3 text-center"><span className="px-2 py-1 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-700">{ic.rovPct}</span></td></tr>))}</tbody></table></div></div>
+          </>}
+          {showYoY&&hasPrevYear&&prevYearSummary&&<>
+            <div className="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-2xl p-5 border border-teal-200"><div className="font-bold text-teal-800 text-lg mb-4">📊 YoY {prevYear} → {yearlyYear}</div><div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[{icon:'📸',label:'總Cap',cur:curYearSummary.totalCap,prev:prevYearSummary.totalCap,fmt:v=>v.toLocaleString()},{icon:'💰',label:'FG總',cur:curYearSummary.fgT,prev:prevYearSummary.fgT,fmt:v=>`$${v.toLocaleString()}`},{icon:'🎯',label:'Rov',cur:curYearSummary.fgR,prev:prevYearSummary.fgR,fmt:v=>`$${v.toLocaleString()}`},{icon:'📅',label:'工作日',cur:curYearSummary.workDays,prev:prevYearSummary.workDays,fmt:v=>`${v}日`}].map((item,i)=>(<div key={i} className="bg-white rounded-xl p-4 border border-teal-100"><div className="text-xl mb-1">{item.icon}</div><div className="text-xs text-gray-400 mb-2">{item.label}</div><div className="text-xl font-bold text-teal-700">{item.fmt(item.cur)}</div><div className="flex items-center gap-2 mt-1"><span className="text-xs text-gray-400">{prevYear}: {item.fmt(item.prev)}</span><YoYBadge cur={item.cur} prev={item.prev}/></div></div>))}</div></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">📸 YoY Captures</div><ResponsiveContainer width="100%" height={200}><BarChart data={yoyChartCap}><CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/><XAxis dataKey="name" tick={{fontSize:12}}/><YAxis tick={{fontSize:11}}/><Tooltip/><Legend iconSize={10} wrapperStyle={{fontSize:12}}/><Bar dataKey={prevYear} fill="#d1d5db" radius={[6,6,0,0]}/><Bar dataKey={yearlyYear} fill="#14b8a6" radius={[6,6,0,0]}/></BarChart></ResponsiveContainer></div><div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">💰 YoY FG</div><ResponsiveContainer width="100%" height={200}><BarChart data={yoyChartFg}><CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/><XAxis dataKey="name" tick={{fontSize:12}}/><YAxis tick={{fontSize:11}}/><Tooltip/><Legend iconSize={10} wrapperStyle={{fontSize:12}}/><Bar dataKey={prevYear} fill="#d1d5db" radius={[6,6,0,0]}/><Bar dataKey={yearlyYear} fill="#14b8a6" radius={[6,6,0,0]}/></BarChart></ResponsiveContainer></div></div>
+          </>}
+        </div>)}
+
+        {/* ===== TAB 6: 數據 ===== */}
+        {hasData&&tab===6&&(<div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">📋 原始數據（{selYear}/{MONTHS_LABEL[selMonth]}）</div><div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr className="bg-gray-50">{['日期','天氣','IC','同事1','C1','H1','B1','同事2','C2','H2','B2','同事3','C3','H3','B3','FG總','Rov'].map((h,i)=>(<th key={i} className="p-2 font-semibold text-gray-500 text-left">{h}</th>))}</tr></thead><tbody>{data.map((r,i)=>{const pct=r.fgT&&r.fgR?(r.fgR/r.fgT*100).toFixed(1)+'%':'';return(<tr key={i} className={`border-b border-gray-50 ${r.weather==='惡劣天氣'?'bg-amber-50':''}`}><td className="p-2 font-medium">{r.date.slice(5)}</td><td className="p-2">{wIcon(r.weather)}</td><td className="p-2">{sn(r.ic)}</td><td className="p-2 text-indigo-600">{r.s1?sn(r.s1):''}</td><td className="p-2 font-bold">{r.c1||''}</td><td className="p-2">{r.h1?<Stars val={r.h1}/>:''}</td><td className="p-2">{r.b1?<Stars val={r.b1}/>:''}</td><td className="p-2 text-indigo-600">{r.s2?sn(r.s2):''}</td><td className="p-2 font-bold">{r.c2||''}</td><td className="p-2">{r.h2?<Stars val={r.h2}/>:''}</td><td className="p-2">{r.b2?<Stars val={r.b2}/>:''}</td><td className="p-2 text-indigo-600">{r.s3?sn(r.s3):''}</td><td className="p-2 font-bold">{r.c3||''}</td><td className="p-2">{r.h3?<Stars val={r.h3}/>:''}</td><td className="p-2">{r.b3?<Stars val={r.b3}/>:''}</td><td className="p-2">{r.fgT?`$${r.fgT.toLocaleString()}`:''}</td><td className="p-2 text-emerald-600">{r.fgR?`$${r.fgR.toLocaleString()}`:''}</td></tr>);})}</tbody></table></div></div>)}
+
+        {/* ===== TAB 7: 設定 ===== */}
+        {tab===7&&(<div className="space-y-6">
+          <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 text-white"><div className="text-xl font-bold mb-1">⚙️ 人員管理</div><div className="text-sm text-gray-300">加減 IC 同 Roving 同事 → 即時同步 Google Sheet</div></div>
+          <div className="bg-blue-50 rounded-2xl p-5 border border-blue-100"><div className="font-bold text-blue-700 text-sm mb-3">💡 點樣運作？</div><div className="grid grid-cols-1 md:grid-cols-3 gap-3"><div className="bg-white rounded-xl p-4 border border-blue-100 text-center"><div className="text-3xl mb-2">🟢</div><div className="font-bold text-gray-700 text-sm">啟用 = Form 見到</div></div><div className="bg-white rounded-xl p-4 border border-blue-100 text-center"><div className="text-3xl mb-2">⚪</div><div className="font-bold text-gray-700 text-sm">停用 = Form 隱藏</div></div><div className="bg-white rounded-xl p-4 border border-blue-100 text-center"><div className="text-3xl mb-2">🗑️</div><div className="font-bold text-gray-700 text-sm">無記錄先可刪</div></div></div></div>
+          <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><RosterTable type="ic" roster={icRoster} activeList={activeICs} inactiveList={inactiveICs}/></div>
+          <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><RosterTable type="staff" roster={staffRoster} activeList={activeStaff} inactiveList={inactiveStaff}/></div>
+          <div className="bg-emerald-50 rounded-2xl p-5 border border-emerald-200"><div className="font-bold text-emerald-700 text-sm mb-4">👁️ Form 預覽</div><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div className="bg-white rounded-xl p-4 border border-emerald-100"><div className="text-xs font-bold text-gray-500 mb-3">IC 選項</div>{activeICs.map(r=>(<div key={r.id} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 mb-1"><span className="w-1.5 h-1.5 bg-emerald-400 rounded-full"/><span className="text-sm">{r.fullName}</span><span className="text-xs text-gray-400 ml-auto">({r.nickname})</span></div>))}</div><div className="bg-white rounded-xl p-4 border border-emerald-100"><div className="text-xs font-bold text-gray-500 mb-3">同事選項</div>{activeStaff.map(r=>(<div key={r.id} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 mb-1"><span className="w-1.5 h-1.5 bg-emerald-400 rounded-full"/><span className="text-sm">{r.fullName}</span><span className="text-xs text-gray-400 ml-auto">({r.nickname})</span></div>))}</div></div></div>
+        </div>)}
+
+        </>)}
+
+        {/* ===== MODALS ===== */}
+        <Modal open={!!showAddModal} onClose={()=>setShowAddModal(null)} title={`新增${showAddModal==='ic'?'IC':'同事'}`}>
           <div className="space-y-4">
-            <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-3 text-sm">👤 選擇同事</div><div className="flex flex-wrap gap-2">{staffList.map(s=>(<button key={s} onClick={()=>setSelStaff(s)} className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all ${selStaff===s?'bg-indigo-600 text-white shadow-md':'bg-gray-50 text-gray-500 hover:bg-gray-100 border border-gray-100'}`}>{sn(s)}</button>))}</div></div>
-            {staffMonthly?(
-              <>
-                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-5 border border-indigo-100">
-                  <div className="flex items-center justify-between mb-4"><div className="font-bold text-indigo-700 text-sm">📆 {MONTHS_LABEL[selMonth]} 總結 — {sn(selStaff)}</div><div className="bg-white text-indigo-600 text-xs font-bold px-3 py-1 rounded-lg shadow-sm">共 {staffMonthly.days} 日</div></div>
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                    <div className="bg-white rounded-xl p-3 text-center shadow-sm"><div className="text-xs text-gray-400 mb-1">總Cap</div><div className="text-2xl font-bold text-indigo-600">{staffMonthly.totalC}</div></div>
-                    <div className="bg-white rounded-xl p-3 text-center shadow-sm"><div className="text-xs text-gray-400 mb-1">日均Cap</div><div className="text-2xl font-bold text-amber-600">{staffMonthly.avgC}</div></div>
-                    <div className="bg-white rounded-xl p-3 text-center shadow-sm"><div className="text-xs text-gray-400 mb-1">Hit Rate</div><Stars val={Math.round(parseFloat(staffMonthly.avgH))}/><div className="text-xs text-gray-400">{staffMonthly.avgH}</div></div>
-                    <div className="bg-white rounded-xl p-3 text-center shadow-sm"><div className="text-xs text-gray-400 mb-1">帶返去</div><Stars val={Math.round(parseFloat(staffMonthly.avgB))}/><div className="text-xs text-gray-400">{staffMonthly.avgB}</div></div>
-                    <div className="bg-white rounded-xl p-3 text-center shadow-sm"><div className="text-xs text-gray-400 mb-1">最高單日</div><div className="text-2xl font-bold text-rose-500">{staffMonthly.bestDay.c}</div><div className="text-xs text-gray-400">{staffMonthly.bestDay.date.slice(5)}</div></div>
-                  </div>
-                </div>
-                <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-                  <div className="font-bold text-gray-700 mb-4 text-sm">📊 每週表現 — {sn(selStaff)}</div>
-                  <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="bg-gray-50"><th className="text-left p-3 rounded-l-lg font-semibold text-gray-500 text-xs">週次</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">出勤</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">總Cap</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">日均</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">Hit</th><th className="text-center p-3 rounded-r-lg font-semibold text-gray-500 text-xs">帶返去</th></tr></thead><tbody>{staffWeekly.map((w,i)=>(<tr key={i} className={`border-b border-gray-50 hover:bg-gray-50 ${w.days===0?'opacity-40':''}`}><td className="p-3 font-semibold text-gray-700 text-xs">{w.label}</td><td className="p-3 text-center">{w.days>0?<span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-lg text-xs font-bold">{w.days}日</span>:<span className="text-gray-300 text-xs">—</span>}</td><td className="p-3 text-center font-bold text-indigo-600">{w.days>0?w.totalC:'—'}</td><td className="p-3 text-center font-bold text-amber-600">{w.avgC!=='-'?w.avgC:'—'}<TrendArrow weekly={staffWeekly.slice(0,i+1)} metric="avgC"/></td><td className="p-3 text-center">{w.avgH!=='-'?<><Stars val={Math.round(parseFloat(w.avgH))}/><span className="text-xs text-gray-400 ml-1">{w.avgH}</span></>:'—'}</td><td className="p-3 text-center">{w.avgB!=='-'?<><Stars val={Math.round(parseFloat(w.avgB))}/><span className="text-xs text-gray-400 ml-1">{w.avgB}</span></>:'—'}</td></tr>))}</tbody></table></div>
-                </div>
-                {weeklyChart.length>1&&(<div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">📈 每週趨勢 — {sn(selStaff)}</div><ResponsiveContainer width="100%" height={200}><LineChart data={weeklyChart}><CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/><XAxis dataKey="name" tick={{fontSize:12}}/><YAxis tick={{fontSize:12}}/><Tooltip/><Legend iconSize={10} wrapperStyle={{fontSize:12}}/><Line type="monotone" dataKey="日均Cap" stroke="#6366f1" strokeWidth={2.5} dot={{r:5,fill:'#6366f1'}}/><Line type="monotone" dataKey="Hit" stroke="#f59e0b" strokeWidth={2} dot={{r:4,fill:'#f59e0b'}}/><Line type="monotone" dataKey="帶返去" stroke="#10b981" strokeWidth={2} dot={{r:4,fill:'#10b981'}}/></LineChart></ResponsiveContainer></div>)}
-                <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-3 text-sm">📅 每日記錄 — {sn(selStaff)}</div><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="bg-gray-50"><th className="text-left p-3 rounded-l-lg font-semibold text-gray-500 text-xs">日期</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">天氣</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">Cap</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">Hit</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">帶返去</th><th className="text-left p-3 rounded-r-lg font-semibold text-gray-500 text-xs">Remarks</th></tr></thead><tbody>{staffEntries.map((e,idx)=>(<tr key={idx} className="border-b border-gray-50 hover:bg-gray-50"><td className="p-3 text-gray-700 font-medium">{e.date.slice(5)}</td><td className="p-3 text-center">{wIcon(e.weather)}</td><td className="p-3 text-center font-bold text-indigo-600">{e.c}</td><td className="p-3 text-center"><Stars val={e.h}/></td><td className="p-3 text-center"><Stars val={e.b}/></td><td className="p-3 text-gray-400 text-xs">{e.remark||'—'}</td></tr>))}</tbody></table></div></div>
-                {staffMonthly.remarks.length>0&&(<div className="bg-amber-50 rounded-2xl p-5 border border-amber-100"><div className="font-bold text-amber-700 mb-3 text-sm">📝 當月 Remarks</div>{staffMonthly.remarks.map((rm,i)=>(<div key={i} className="flex gap-3 items-start mb-2 bg-white rounded-xl px-4 py-3 border border-amber-100"><span className="text-xs text-amber-500 font-mono whitespace-nowrap mt-0.5">{rm.date.slice(5)}</span><span className="text-sm text-gray-600">{rm.text}</span></div>))}</div>)}
-              </>
-            ):(<div className="bg-white rounded-2xl p-12 text-center border border-gray-100"><div className="text-3xl mb-3">🔍</div><div className="text-gray-400 font-semibold">呢位同事喺 {MONTHS_LABEL[selMonth]} 暫無記錄</div></div>)}
-          </div>
-        )}
-
-        {hasData&&tab===2&&(
-          <div className="space-y-4">
-            <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-3 text-sm">🧑‍💼 選擇 IC</div><div className="flex flex-wrap gap-2">{icList.map(ic=>(<button key={ic} onClick={()=>setSelIC(ic)} className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all ${activeIC===ic?'bg-purple-600 text-white shadow-md':'bg-gray-50 text-gray-500 hover:bg-gray-100 border border-gray-100'}`}>{sn(ic)}</button>))}</div></div>
-            <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-              <div className="font-bold text-gray-700 mb-2 text-sm">📊 全 IC 月度對比（{MONTHS_LABEL[selMonth]}）</div><div className="text-xs text-gray-400 mb-4">* 平均人手已計埋 IC 本人</div>
-              <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="bg-gray-50"><th className="text-center p-3 rounded-l-lg font-semibold text-gray-500 text-xs">#</th><th className="text-left p-3 font-semibold text-gray-500 text-xs">IC</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">評分</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">工作日</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">平均人手</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">總Cap</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">日均Cap</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">人均Cap</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">FG 總</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">日均FG</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">Roving</th><th className="text-center p-3 rounded-r-lg font-semibold text-gray-500 text-xs">佔比</th></tr></thead>
-              <tbody>{rankedICs.map((s,i)=>(<tr key={s.name} className={`border-b border-gray-50 hover:bg-gray-50 cursor-pointer ${activeIC===s.name?'bg-purple-50':''}`} onClick={()=>setSelIC(s.name)}><td className="p-3 text-center text-lg">{rankMedal(i)}</td><td className="p-3 font-semibold text-gray-700 text-xs whitespace-nowrap">{activeIC===s.name&&<span className="text-purple-500 mr-1">●</span>}{sn(s.name)}</td><td className="p-3 text-center"><span className={`px-2 py-1 rounded-lg text-xs font-black ${i===0?'bg-yellow-100 text-yellow-700':i===1?'bg-gray-100 text-gray-600':i===2?'bg-orange-100 text-orange-600':'bg-gray-50 text-gray-500'}`}>{s.score}</span></td><td className="p-3 text-center">{s.workDays}{s.cancelDays>0&&<span className="text-xs text-rose-400 ml-1">({s.cancelDays}取消)</span>}</td><td className="p-3 text-center"><span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-lg text-xs font-bold">{s.avgHeadcount}</span></td><td className="p-3 text-center font-bold text-indigo-600">{s.totalCap}</td><td className="p-3 text-center font-bold text-amber-600">{s.avgCapPerDay}</td><td className="p-3 text-center font-semibold text-gray-600">{s.avgCapPerStaff}</td><td className="p-3 text-center">${s.fgT.toLocaleString()}</td><td className="p-3 text-center font-semibold text-blue-600">${s.fgDailyAvg.toLocaleString()}</td><td className="p-3 text-center text-emerald-600 font-semibold">${s.fgR.toLocaleString()}</td><td className="p-3 text-center"><span className={`px-2 py-1 rounded-lg text-xs font-bold ${parseFloat(s.rovPctStr)>=55?'bg-emerald-100 text-emerald-700':'bg-amber-100 text-amber-700'}`}>{s.rovPctStr}</span></td></tr>))}</tbody></table></div>
-            </div>
-            {icStats&&(<>
-              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl p-5 border border-purple-100"><div className="font-bold text-purple-700 text-sm mb-4">🧑‍💼 {sn(activeIC)} — {MONTHS_LABEL[selMonth]} 睇場詳情</div><div className="grid grid-cols-2 md:grid-cols-5 gap-3"><StatCard icon="📅" label="工作日" value={icStats.workDays} sub={icStats.cancelDays>0?`${icStats.cancelDays}日取消`:''} color="purple"/><StatCard icon="👥" label="平均人手（含IC）" value={icStats.avgHeadcount} sub={`Roving ${icStats.avgRovStaff}人`} color="indigo"/><StatCard icon="📸" label="總 Captures" value={icStats.totalCap} sub={`人均 ${icStats.avgCapPerStaff}`} color="amber"/><StatCard icon="💰" label="FG 日均收入" value={`$${icStats.fgDailyAvg.toLocaleString()}`} sub={`總 $${icStats.fgT.toLocaleString()}`} color="green"/><StatCard icon="🎯" label="Roving 佔比" value={icStats.rovPctStr} sub={`$${icStats.fgR.toLocaleString()}`} color="blue"/></div></div>
-              <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">👥 同事喺 {sn(activeIC)} 當值時表現</div><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="bg-gray-50"><th className="text-left p-3 rounded-l-lg font-semibold text-gray-500 text-xs">同事</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">日數</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">總Cap</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">日均Cap</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">Hit</th><th className="text-center p-3 rounded-r-lg font-semibold text-gray-500 text-xs">帶返去</th></tr></thead><tbody>{icStaffList.map((s,i)=>(<tr key={i} className="border-b border-gray-50 hover:bg-gray-50"><td className="p-3 font-semibold text-gray-700 text-xs">{i===0&&'🥇 '}{i===1&&'🥈 '}{i===2&&'🥉 '}{sn(s.name)}</td><td className="p-3 text-center"><span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-lg text-xs font-bold">{s.days}日</span></td><td className="p-3 text-center font-bold text-indigo-600">{s.totalC}</td><td className="p-3 text-center font-bold text-amber-600">{s.avgC}</td><td className="p-3 text-center"><Stars val={Math.round(parseFloat(s.avgH))}/><span className="text-xs text-gray-400 ml-1">{s.avgH}</span></td><td className="p-3 text-center"><Stars val={Math.round(parseFloat(s.avgB))}/><span className="text-xs text-gray-400 ml-1">{s.avgB}</span></td></tr>))}</tbody></table></div></div>
-              <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">📅 {sn(activeIC)} 每日當值記錄</div><div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr className="bg-gray-50"><th className="text-left p-2 rounded-l-lg font-semibold text-gray-500">日期</th><th className="text-center p-2 font-semibold text-gray-500">天氣</th><th className="text-center p-2 font-semibold text-gray-500">人手</th><th className="text-left p-2 font-semibold text-gray-500">同事1</th><th className="text-center p-2 font-semibold text-gray-500">C</th><th className="text-left p-2 font-semibold text-gray-500">同事2</th><th className="text-center p-2 font-semibold text-gray-500">C</th><th className="text-left p-2 font-semibold text-gray-500">同事3</th><th className="text-center p-2 font-semibold text-gray-500">C</th><th className="text-center p-2 font-semibold text-gray-500">FG總</th><th className="text-center p-2 font-semibold text-gray-500">Rov</th><th className="text-center p-2 rounded-r-lg font-semibold text-gray-500">%</th></tr></thead><tbody>{icDailyRecords.map((r,i)=>{const pct=r.fgT&&r.fgR?(r.fgR/r.fgT*100).toFixed(1)+'%':'';const rovCnt=[r.s1,r.s2,r.s3].filter(Boolean).length;const hc=r.weather==='惡劣天氣'?'—':(rovCnt+1);return(<tr key={i} className={`border-b border-gray-50 ${r.weather==='惡劣天氣'?'bg-amber-50':'hover:bg-gray-50'}`}><td className="p-2 font-medium whitespace-nowrap">{r.date.slice(5)}</td><td className="p-2 text-center">{wIcon(r.weather)}</td><td className="p-2 text-center"><span className={`px-1.5 py-0.5 rounded text-xs font-bold ${hc==='—'?'text-gray-300':'bg-purple-100 text-purple-700'}`}>{hc}</span></td><td className="p-2 text-indigo-600 whitespace-nowrap">{r.s1?sn(r.s1):''}</td><td className="p-2 text-center font-bold">{r.c1||''}</td><td className="p-2 text-indigo-600 whitespace-nowrap">{r.s2?sn(r.s2):''}</td><td className="p-2 text-center font-bold">{r.c2||''}</td><td className="p-2 text-indigo-600 whitespace-nowrap">{r.s3?sn(r.s3):''}</td><td className="p-2 text-center font-bold">{r.c3||''}</td><td className="p-2 text-center">{r.fgT?`$${r.fgT.toLocaleString()}`:''}</td><td className="p-2 text-center text-emerald-600 font-semibold">{r.fgR?`$${r.fgR.toLocaleString()}`:''}</td><td className="p-2 text-center"><span className={pct?'bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded font-bold':''}>{pct}</span></td></tr>);})}</tbody></table></div></div>
-            </>)}
-            {rankedICs.length>0&&(<div className="bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50 rounded-2xl p-5 border border-amber-200 shadow-sm">
-              <div className="font-bold text-amber-800 text-sm mb-1">🏆 {MONTHS_LABEL[selMonth]} IC 表現排名</div><div className="text-xs text-amber-600 mb-4">評分標準：日均 Cap（30%）· 日均 FG（25%）· Roving 佔比（20%）· Hit 率（15%）· 帶返去（10%）</div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">{rankedICs.map((ic,i)=>(<div key={ic.name} className={`${rankBg(i)} border rounded-xl p-4 flex items-center gap-4`}><div className="text-3xl">{rankMedal(i)}</div><div className="flex-1 min-w-0"><div className="flex items-center gap-2 mb-1"><span className="font-bold text-gray-800 text-sm">{sn(ic.name)}</span><span className={`ml-auto text-lg font-black ${i===0?'text-yellow-600':i===1?'text-gray-500':i===2?'text-orange-500':'text-gray-400'}`}>{ic.score}</span><span className="text-xs text-gray-400">/ 100</span></div><div className="flex flex-wrap gap-1"><span className="bg-indigo-100 text-indigo-700 text-xs px-2 py-0.5 rounded font-medium">Cap {ic.breakdown.cap}</span><span className="bg-emerald-100 text-emerald-700 text-xs px-2 py-0.5 rounded font-medium">FG {ic.breakdown.fg}</span><span className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded font-medium">Rov {ic.breakdown.rov}</span><span className="bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded font-medium">Hit {ic.breakdown.hit}</span><span className="bg-rose-100 text-rose-700 text-xs px-2 py-0.5 rounded font-medium">帶 {ic.breakdown.bring}</span></div><div className="w-full bg-gray-200 rounded-full h-2 mt-2"><div className={`h-2 rounded-full ${i===0?'bg-yellow-500':i===1?'bg-gray-400':i===2?'bg-orange-400':'bg-gray-300'}`} style={{width:`${ic.score}%`}}/></div></div></div>))}</div>
-              {radarData.length>0&&(<div className="bg-white rounded-xl p-4 border border-amber-100 mb-4"><div className="font-semibold text-gray-600 text-xs mb-2 text-center">📊 IC 五維雷達圖</div><ResponsiveContainer width="100%" height={260}><RadarChart data={radarData} cx="50%" cy="50%" outerRadius="70%"><PolarGrid stroke="#e5e7eb"/><PolarAngleAxis dataKey="dim" tick={{fontSize:9,fill:'#6b7280'}}/><PolarRadiusAxis tick={{fontSize:9}} domain={[0,'auto']}/>{rankedICs.map((ic,i)=>(<Radar key={ic.name} name={sn(ic.name)} dataKey={sn(ic.name)} stroke={radarColors[i%radarColors.length]} fill={radarColors[i%radarColors.length]} fillOpacity={0.1} strokeWidth={2}/>))}<Legend iconSize={10} wrapperStyle={{fontSize:11}}/><Tooltip/></RadarChart></ResponsiveContainer></div>)}
-              <div className="bg-white rounded-xl p-4 border border-amber-100"><div className="flex items-start gap-2"><span className="text-lg">💬</span><div><div className="font-semibold text-amber-800 text-xs mb-1">系統分析評語</div><div className="text-sm text-gray-700 leading-relaxed">{genICComment(rankedICs)}</div></div></div></div>
-            </div>)}
-          </div>
-        )}
-
-        {hasData&&tab===3&&(
-          <div className="space-y-4">
-            <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">📅 每週數據對比（{MONTHS_LABEL[selMonth]}）</div><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="bg-gray-50"><th className="text-left p-3 rounded-l-lg font-semibold text-gray-500 text-xs">週次</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">日均Cap</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">Hit</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">帶返去</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">FG總</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">Roving</th><th className="text-center p-3 rounded-r-lg font-semibold text-gray-500 text-xs">佔比</th></tr></thead><tbody>{weeklyOverview.map((w,i)=>(<tr key={i} className="border-b border-gray-50 hover:bg-gray-50"><td className="p-3 font-semibold text-gray-700 text-xs">{w.label}</td><td className="p-3 text-center font-bold text-indigo-600">{w.avgC}</td><td className="p-3 text-center"><Stars val={Math.round(parseFloat(w.avgH))}/><span className="text-xs text-gray-400 ml-1">{w.avgH}</span></td><td className="p-3 text-center"><Stars val={Math.round(parseFloat(w.avgB))}/><span className="text-xs text-gray-400 ml-1">{w.avgB}</span></td><td className="p-3 text-center">${w.fgT.toLocaleString()}</td><td className="p-3 text-center text-emerald-600 font-semibold">${w.fgR.toLocaleString()}</td><td className="p-3 text-center"><span className={`px-2 py-1 rounded-lg text-xs font-bold ${parseFloat(w.pct)>=60?'bg-emerald-100 text-emerald-700':'bg-amber-100 text-amber-700'}`}>{w.pct}</span></td></tr>))}</tbody></table></div></div>
-            <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">💰 每週收入趨勢</div><ResponsiveContainer width="100%" height={220}><BarChart data={weeklyOverview.map(w=>({name:w.key,'FG 總收入':w.fgT,'Roving':w.fgR}))}><CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/><XAxis dataKey="name" tick={{fontSize:12}}/><YAxis tick={{fontSize:11}}/><Tooltip/><Legend iconSize={10} wrapperStyle={{fontSize:12}}/><Bar dataKey="FG 總收入" fill="#c7d2fe" radius={[6,6,0,0]}/><Bar dataKey="Roving" fill="#6366f1" radius={[6,6,0,0]}/></BarChart></ResponsiveContainer></div>
-          </div>
-        )}
-
-        {hasData&&tab===4&&(
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">🌦️ 天氣日數分佈</div><ResponsiveContainer width="100%" height={220}><PieChart><Pie data={weatherStats.map(w=>({name:`${wIcon(w.weather)} ${w.weather} ${w.days}日`,value:w.days}))} cx="50%" cy="50%" innerRadius={45} outerRadius={70} paddingAngle={4} dataKey="value">{weatherStats.map((_,i)=><Cell key={i} fill={pieColors[i]}/>)}</Pie><Tooltip formatter={(v)=>`${v} 日`}/><Legend iconType="circle" iconSize={10} wrapperStyle={{fontSize:12}} formatter={(v)=><span className="text-gray-600 text-xs">{v}</span>}/></PieChart></ResponsiveContainer></div>
-              <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">💰 天氣 × 收入</div><ResponsiveContainer width="100%" height={220}><BarChart data={weatherStats.filter(w=>w.avgFgT!=='-').map(w=>({name:w.weather,'平均總收入':w.avgFgT,'平均Roving':w.avgFgR}))}><CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/><XAxis dataKey="name" tick={{fontSize:11}}/><YAxis tick={{fontSize:11}}/><Tooltip/><Legend iconSize={10} wrapperStyle={{fontSize:11}}/><Bar dataKey="平均總收入" fill="#c7d2fe" radius={[6,6,0,0]}/><Bar dataKey="平均Roving" fill="#6366f1" radius={[6,6,0,0]}/></BarChart></ResponsiveContainer></div>
-            </div>
-            <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">📊 天氣 × 表現總覽</div><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="bg-gray-50"><th className="text-left p-3 rounded-l-lg font-semibold text-gray-500 text-xs">天氣</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">日數</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">Hit</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">帶返去</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">FG 總</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">Roving</th><th className="text-center p-3 rounded-r-lg font-semibold text-gray-500 text-xs">佔比</th></tr></thead><tbody>{weatherStats.map((w,i)=>(<tr key={i} className="border-b border-gray-50 hover:bg-gray-50"><td className="p-3 font-semibold">{wIcon(w.weather)} {w.weather}</td><td className="p-3 text-center font-bold">{w.days}</td><td className="p-3 text-center">{w.avgH!=='-'?<><Stars val={Math.round(parseFloat(w.avgH))}/><span className="text-xs text-gray-400 ml-1">{w.avgH}</span></>:'—'}</td><td className="p-3 text-center">{w.avgB!=='-'?<><Stars val={Math.round(parseFloat(w.avgB))}/><span className="text-xs text-gray-400 ml-1">{w.avgB}</span></>:'—'}</td><td className="p-3 text-center">{w.avgFgT!=='-'?`$${w.avgFgT.toLocaleString()}`:'—'}</td><td className="p-3 text-center text-emerald-600 font-semibold">{w.avgFgR!=='-'?`$${w.avgFgR.toLocaleString()}`:'—'}</td><td className="p-3 text-center">{w.pct!=='-'?<span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold">{w.pct}</span>:'—'}</td></tr>))}</tbody></table></div></div>
-          </div>
-        )}
-
-        {tab===5&&(
-          <div className="space-y-4">
-            <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-2"><span className="text-sm font-bold text-gray-500">📆 選擇年度</span><select value={yearlyYear} onChange={(e)=>{setYearlyYear(Number(e.target.value));setShowYoY(false);}} className="bg-gray-50 border border-gray-200 text-gray-700 font-semibold text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-purple-300 cursor-pointer">{AVAILABLE_YEARS.map(y=><option key={y} value={y}>{y} 年</option>)}</select></div>
-              <div className="w-px h-8 bg-gray-200 hidden md:block"/>
-              {hasPrevYear?(<button onClick={()=>setShowYoY(!showYoY)} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${showYoY?'bg-gradient-to-r from-teal-500 to-emerald-500 text-white shadow-lg shadow-emerald-200':'bg-gray-50 text-gray-500 hover:bg-gray-100 border border-gray-200'}`}>📊 YoY（{prevYear} vs {yearlyYear}）</button>):(<span className="text-xs text-gray-300 bg-gray-50 px-3 py-2 rounded-xl">⚠️ 冇 {prevYear} 年數據</span>)}
-            </div>
-            {!showYoY&&(<>
-              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl p-5 border border-purple-100"><div className="font-bold text-purple-700 text-lg mb-4">📆 {yearlyYear} 年度分析</div><div className="grid grid-cols-2 md:grid-cols-4 gap-3"><StatCard icon="📅" label="總工作日" value={curYearSummary.workDays} sub={`${yearlyMonthly.length} 個月數據`} color="purple"/><StatCard icon="📸" label="年度總 Captures" value={curYearSummary.totalCap} color="amber"/><StatCard icon="💰" label="FG Cart 年度總收入" value={`$${curYearSummary.fgT.toLocaleString()}`} color="green"/><StatCard icon="🎯" label="年度 Roving 佔比" value={curYearSummary.fgT>0?`${curYearSummary.rovPct}%`:'—'} sub={`$${curYearSummary.fgR.toLocaleString()}`} color="blue"/></div></div>
-              <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">📊 每月數據對比</div><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="bg-gray-50"><th className="text-left p-3 rounded-l-lg font-semibold text-gray-500 text-xs">月份</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">工作日</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">總Cap</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">人均Cap</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">FG 總</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">Roving</th><th className="text-center p-3 rounded-r-lg font-semibold text-gray-500 text-xs">佔比</th></tr></thead><tbody>{yearlyMonthly.map((m,i)=>(<tr key={i} className="border-b border-gray-50 hover:bg-gray-50"><td className="p-3 font-semibold text-gray-700">{m.label}</td><td className="p-3 text-center"><span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-lg text-xs font-bold">{m.workDays}日</span></td><td className="p-3 text-center font-bold text-indigo-600">{m.totalCap}</td><td className="p-3 text-center font-bold text-amber-600">{m.avgCap}</td><td className="p-3 text-center">${m.fgT.toLocaleString()}</td><td className="p-3 text-center text-emerald-600 font-semibold">${m.fgR.toLocaleString()}</td><td className="p-3 text-center"><span className={`px-2 py-1 rounded-lg text-xs font-bold ${parseFloat(m.rovPct)>=55?'bg-emerald-100 text-emerald-700':'bg-amber-100 text-amber-700'}`}>{m.rovPct}%</span></td></tr>))}<tr className="bg-indigo-50 font-bold"><td className="p-3 text-indigo-700">合計</td><td className="p-3 text-center text-indigo-700">{curYearSummary.workDays}日</td><td className="p-3 text-center text-indigo-700">{curYearSummary.totalCap}</td><td className="p-3 text-center text-amber-600">—</td><td className="p-3 text-center text-indigo-700">${curYearSummary.fgT.toLocaleString()}</td><td className="p-3 text-center text-emerald-700">${curYearSummary.fgR.toLocaleString()}</td><td className="p-3 text-center"><span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-lg text-xs">{curYearSummary.fgT>0?curYearSummary.rovPct+'%':'—'}</span></td></tr></tbody></table></div></div>
-              {yearlyMonthly.length>1&&(<div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">📈 每月 Captures 趨勢</div><ResponsiveContainer width="100%" height={200}><LineChart data={yearlyMonthly.map(m=>({name:m.label,Captures:m.totalCap,'人均':parseFloat(m.avgCap)||0}))}><CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/><XAxis dataKey="name" tick={{fontSize:12}}/><YAxis tick={{fontSize:11}}/><Tooltip/><Legend iconSize={10} wrapperStyle={{fontSize:12}}/><Line type="monotone" dataKey="Captures" stroke="#6366f1" strokeWidth={2.5} dot={{r:5,fill:'#6366f1'}}/><Line type="monotone" dataKey="人均" stroke="#f59e0b" strokeWidth={2} dot={{r:4,fill:'#f59e0b'}}/></LineChart></ResponsiveContainer></div><div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">💰 每月收入趨勢</div><ResponsiveContainer width="100%" height={200}><BarChart data={yearlyMonthly.map(m=>({name:m.label,'FG 總':m.fgT,'Roving':m.fgR}))}><CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/><XAxis dataKey="name" tick={{fontSize:12}}/><YAxis tick={{fontSize:11}}/><Tooltip/><Legend iconSize={10} wrapperStyle={{fontSize:12}}/><Bar dataKey="FG 總" fill="#c7d2fe" radius={[6,6,0,0]}/><Bar dataKey="Roving" fill="#6366f1" radius={[6,6,0,0]}/></BarChart></ResponsiveContainer></div></div>)}
-              <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">🏆 年度同事排名</div><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="bg-gray-50"><th className="text-left p-3 rounded-l-lg font-semibold text-gray-500 text-xs">#</th><th className="text-left p-3 font-semibold text-gray-500 text-xs">同事</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">月數</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">日數</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">總Cap</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">日均Cap</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">Hit</th><th className="text-center p-3 rounded-r-lg font-semibold text-gray-500 text-xs">帶返去</th></tr></thead><tbody>{yearlyStaff.map((s,i)=>(<tr key={i} className="border-b border-gray-50 hover:bg-gray-50"><td className="p-3 font-bold text-gray-400 text-xs">{i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</td><td className="p-3 font-semibold text-gray-700 text-xs whitespace-nowrap">{sn(s.name)}</td><td className="p-3 text-center"><span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-lg text-xs font-bold">{s.mths}</span></td><td className="p-3 text-center">{s.days}</td><td className="p-3 text-center font-bold text-indigo-600">{s.totalC}</td><td className="p-3 text-center font-bold text-amber-600">{s.avgC}</td><td className="p-3 text-center"><Stars val={Math.round(parseFloat(s.avgH))}/><span className="text-xs text-gray-400 ml-1">{s.avgH}</span></td><td className="p-3 text-center"><Stars val={Math.round(parseFloat(s.avgB))}/><span className="text-xs text-gray-400 ml-1">{s.avgB}</span></td></tr>))}</tbody></table></div></div>
-              <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-2 text-sm">🧑‍💼 年度 IC 排名</div><div className="text-xs text-gray-400 mb-4">* 平均人手已計埋 IC 本人</div><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="bg-gray-50"><th className="text-left p-3 rounded-l-lg font-semibold text-gray-500 text-xs">IC</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">總日</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">工作日</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">平均人手</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">總Cap</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">人均Cap</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">FG 總</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">日均FG</th><th className="text-center p-3 font-semibold text-gray-500 text-xs">Roving</th><th className="text-center p-3 rounded-r-lg font-semibold text-gray-500 text-xs">佔比</th></tr></thead><tbody>{yearlyIC.map((ic,i)=>(<tr key={i} className="border-b border-gray-50 hover:bg-gray-50"><td className="p-3 font-semibold text-gray-700 text-xs whitespace-nowrap">{i===0?'🥇 ':i===1?'🥈 ':i===2?'🥉 ':''}{sn(ic.name)}</td><td className="p-3 text-center">{ic.days}</td><td className="p-3 text-center">{ic.workDays}</td><td className="p-3 text-center"><span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-lg text-xs font-bold">{ic.avgHeadcount}</span></td><td className="p-3 text-center font-bold text-indigo-600">{ic.totalCap}</td><td className="p-3 text-center font-bold text-amber-600">{ic.avgCapPerStaff}</td><td className="p-3 text-center">${ic.fgT.toLocaleString()}</td><td className="p-3 text-center font-semibold text-blue-600">${ic.fgDailyAvg.toLocaleString()}</td><td className="p-3 text-center text-emerald-600 font-semibold">${ic.fgR.toLocaleString()}</td><td className="p-3 text-center"><span className={`px-2 py-1 rounded-lg text-xs font-bold ${parseFloat(ic.rovPct)>=55?'bg-emerald-100 text-emerald-700':'bg-amber-100 text-amber-700'}`}>{ic.rovPct}</span></td></tr>))}</tbody></table></div></div>
-            </>)}
-            {showYoY&&hasPrevYear&&prevYearSummary&&(<>
-              <div className="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-2xl p-5 border border-teal-200"><div className="flex items-center gap-2 mb-4"><div className="font-bold text-teal-800 text-lg">📊 YoY 年度對比</div><span className="bg-white text-teal-600 text-xs font-bold px-3 py-1 rounded-lg shadow-sm">{prevYear} → {yearlyYear}</span></div><div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[{icon:'📸',label:'總 Captures',cur:curYearSummary.totalCap,prev:prevYearSummary.totalCap,fmt:v=>v.toLocaleString()},{icon:'💰',label:'FG 總收入',cur:curYearSummary.fgT,prev:prevYearSummary.fgT,fmt:v=>`$${v.toLocaleString()}`},{icon:'🎯',label:'Roving 收入',cur:curYearSummary.fgR,prev:prevYearSummary.fgR,fmt:v=>`$${v.toLocaleString()}`},{icon:'📅',label:'工作日',cur:curYearSummary.workDays,prev:prevYearSummary.workDays,fmt:v=>`${v}日`}].map((item,i)=>(<div key={i} className="bg-white rounded-xl p-4 border border-teal-100 shadow-sm"><div className="text-xl mb-1">{item.icon}</div><div className="text-xs text-gray-400 font-medium mb-2">{item.label}</div><div className="text-xl font-bold text-teal-700 mb-1">{item.fmt(item.cur)}</div><div className="flex items-center gap-2"><span className="text-xs text-gray-400">{prevYear}：{item.fmt(item.prev)}</span><YoYBadge cur={item.cur} prev={item.prev}/></div></div>))}</div></div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">📸 YoY Captures</div><ResponsiveContainer width="100%" height={200}><BarChart data={yoyChartCap}><CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/><XAxis dataKey="name" tick={{fontSize:12}}/><YAxis tick={{fontSize:11}}/><Tooltip/><Legend iconSize={10} wrapperStyle={{fontSize:12}}/><Bar dataKey={prevYear} fill="#d1d5db" radius={[6,6,0,0]}/><Bar dataKey={yearlyYear} fill="#14b8a6" radius={[6,6,0,0]}/></BarChart></ResponsiveContainer></div><div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="font-bold text-gray-700 mb-4 text-sm">💰 YoY FG 收入</div><ResponsiveContainer width="100%" height={200}><BarChart data={yoyChartFg}><CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/><XAxis dataKey="name" tick={{fontSize:12}}/><YAxis tick={{fontSize:11}}/><Tooltip/><Legend iconSize={10} wrapperStyle={{fontSize:12}}/><Bar dataKey={prevYear} fill="#d1d5db" radius={[6,6,0,0]}/><Bar dataKey={yearlyYear} fill="#14b8a6" radius={[6,6,0,0]}/></BarChart></ResponsiveContainer></div></div>
-            </>)}
-          </div>
-        )}
-
-        {hasData&&tab===6&&(
-          <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><div className="flex items-center justify-between mb-4"><div className="font-bold text-gray-700 text-sm">📋 Responses 原始數據（{selYear}/{MONTHS_LABEL[selMonth]}）</div></div><div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr className="bg-gray-50">{['日期','天氣','IC','同事1','C1','H1','B1','同事2','C2','H2','B2','同事3','C3','H3','B3','FG總','Rov','%'].map((h,i)=>(<th key={i} className="p-2 font-semibold text-gray-500 whitespace-nowrap text-left">{h}</th>))}</tr></thead><tbody>{data.map((r,i)=>{const pct=r.fgT&&r.fgR?(r.fgR/r.fgT*100).toFixed(1)+'%':'';return(<tr key={i} className={`border-b border-gray-50 ${r.weather==='惡劣天氣'?'bg-amber-50':'hover:bg-gray-50'}`}><td className="p-2 whitespace-nowrap font-medium">{r.date.slice(5)}</td><td className="p-2">{wIcon(r.weather)}</td><td className="p-2 whitespace-nowrap">{sn(r.ic)}</td><td className="p-2 whitespace-nowrap text-indigo-600">{r.s1?sn(r.s1):''}</td><td className="p-2 font-bold">{r.c1||''}</td><td className="p-2">{r.h1?<Stars val={r.h1}/>:''}</td><td className="p-2">{r.b1?<Stars val={r.b1}/>:''}</td><td className="p-2 whitespace-nowrap text-indigo-600">{r.s2?sn(r.s2):''}</td><td className="p-2 font-bold">{r.c2||''}</td><td className="p-2">{r.h2?<Stars val={r.h2}/>:''}</td><td className="p-2">{r.b2?<Stars val={r.b2}/>:''}</td><td className="p-2 whitespace-nowrap text-indigo-600">{r.s3?sn(r.s3):''}</td><td className="p-2 font-bold">{r.c3||''}</td><td className="p-2">{r.h3?<Stars val={r.h3}/>:''}</td><td className="p-2">{r.b3?<Stars val={r.b3}/>:''}</td><td className="p-2">{r.fgT?`$${r.fgT.toLocaleString()}`:''}</td><td className="p-2 text-emerald-600 font-semibold">{r.fgR?`$${r.fgR.toLocaleString()}`:''}</td><td className="p-2"><span className={pct?'bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded font-bold':''}>{pct}</span></td></tr>);})}</tbody></table></div></div>
-        )}
-
-        {tab===7&&(
-          <div className="space-y-6">
-            <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 text-white relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full -translate-y-8 translate-x-8"/>
-              <div className="relative"><div className="text-xl font-bold mb-1">⚙️ 人員管理設定</div><div className="text-sm text-gray-300">加減 IC 同 Roving 同事 → 即時更新 Form 嘅選項</div></div>
-            </div>
-            <div className="bg-blue-50 rounded-2xl p-5 border border-blue-100">
-              <div className="font-bold text-blue-700 text-sm mb-3">💡 點樣運作？</div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="bg-white rounded-xl p-4 border border-blue-100 text-center"><div className="text-3xl mb-2">🟢</div><div className="font-bold text-gray-700 text-sm mb-1">啟用 = Form 見到</div><div className="text-xs text-gray-400">撥去「啟用」嘅人會出現喺 IC 日報 Form 嘅下拉選項</div></div>
-                <div className="bg-white rounded-xl p-4 border border-blue-100 text-center"><div className="text-3xl mb-2">⚪</div><div className="font-bold text-gray-700 text-sm mb-1">停用 = Form 無左</div><div className="text-xs text-gray-400">撥去「停用」就唔會再喺 Form 出現，但歷史數據唔受影響</div></div>
-                <div className="bg-white rounded-xl p-4 border border-blue-100 text-center"><div className="text-3xl mb-2">🗑️</div><div className="font-bold text-gray-700 text-sm mb-1">刪除 = 完全移除</div><div className="text-xs text-gray-400">只有無歷史記錄嘅人先可以刪除，有記錄嘅只可以停用</div></div>
-              </div>
-            </div>
-            <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><RosterTable type="ic" roster={icRoster} activeList={activeICs} inactiveList={inactiveICs}/></div>
-            <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm"><RosterTable type="staff" roster={staffRoster} activeList={activeStaff} inactiveList={inactiveStaff}/></div>
-            <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-5 border border-emerald-200">
-              <div className="font-bold text-emerald-700 text-sm mb-4">👁️ Form 預覽 — IC 填表時會見到嘅選項</div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-white rounded-xl p-4 border border-emerald-100"><div className="text-xs font-bold text-gray-500 mb-3 flex items-center gap-2"><span className="w-2 h-2 bg-purple-500 rounded-full"/>IC 當值人員（下拉選項）</div><div className="space-y-1">{activeICs.length>0?activeICs.map(r=>(<div key={r.id} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2"><span className="w-1.5 h-1.5 bg-emerald-400 rounded-full"/><span className="text-sm text-gray-700">{r.fullName}</span><span className="text-xs text-gray-400 ml-auto">({r.nickname})</span></div>)):<div className="text-xs text-gray-300 text-center py-4">⚠️ 未有啟用嘅 IC</div>}</div>{inactiveICs.length>0&&<div className="mt-2 text-xs text-gray-400">已停用：{inactiveICs.map(r=>r.nickname).join('、')}</div>}</div>
-                <div className="bg-white rounded-xl p-4 border border-emerald-100"><div className="text-xs font-bold text-gray-500 mb-3 flex items-center gap-2"><span className="w-2 h-2 bg-indigo-500 rounded-full"/>Roving 同事（下拉選項）</div><div className="space-y-1">{activeStaff.length>0?activeStaff.map(r=>(<div key={r.id} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2"><span className="w-1.5 h-1.5 bg-emerald-400 rounded-full"/><span className="text-sm text-gray-700">{r.fullName}</span><span className="text-xs text-gray-400 ml-auto">({r.nickname})</span></div>)):<div className="text-xs text-gray-300 text-center py-4">⚠️ 未有啟用嘅同事</div>}</div>{inactiveStaff.length>0&&<div className="mt-2 text-xs text-gray-400">已停用：{inactiveStaff.map(r=>r.nickname).join('、')}</div>}</div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <Modal open={!!showAddModal} onClose={()=>setShowAddModal(null)} title={`新增${showAddModal==='ic'?'IC':'Roving 同事'}`}>
-          <div className="space-y-4">
-            <div><label className="block text-xs font-bold text-gray-500 mb-1.5">全名（用於 Form 選項）</label><input value={newFull} onChange={e=>setNewFull(e.target.value)} placeholder="例如：Wong Tai Man Peter" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"/><div className="text-xs text-gray-300 mt-1">格式：姓 名 英文名</div></div>
-            <div><label className="block text-xs font-bold text-gray-500 mb-1.5">顯示名（Dashboard 顯示）</label><input value={newNick} onChange={e=>setNewNick(e.target.value)} placeholder="例如：Peter" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"/></div>
-            <div className="flex gap-3 pt-2"><button onClick={()=>setShowAddModal(null)} className="flex-1 bg-gray-100 text-gray-500 font-semibold py-3 rounded-xl hover:bg-gray-200 text-sm">取消</button><button onClick={handleAdd} className="flex-1 bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 shadow-md text-sm">✅ 確認新增</button></div>
+            <div><label className="block text-xs font-bold text-gray-500 mb-1.5">全名</label><input value={newFull} onChange={e=>setNewFull(e.target.value)} placeholder="例如：Wong Tai Man Peter" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"/></div>
+            <div><label className="block text-xs font-bold text-gray-500 mb-1.5">顯示名</label><input value={newNick} onChange={e=>setNewNick(e.target.value)} placeholder="例如：Peter" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"/></div>
+            <div className="flex gap-3 pt-2"><button onClick={()=>setShowAddModal(null)} className="flex-1 bg-gray-100 text-gray-500 font-semibold py-3 rounded-xl text-sm">取消</button><button onClick={handleAdd} className="flex-1 bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-md text-sm">✅ 確認</button></div>
           </div>
         </Modal>
-
         <Modal open={!!confirmDel} onClose={()=>setConfirmDel(null)} title="確認刪除">
           <div className="space-y-4">
-            <div className="bg-rose-50 rounded-xl p-4 border border-rose-100 text-center"><div className="text-3xl mb-2">🗑️</div><div className="text-sm text-gray-700">確定要刪除 <span className="font-bold text-rose-600">{confirmDel?.name}</span> ？</div><div className="text-xs text-gray-400 mt-1">刪除後無法復原</div></div>
-            <div className="flex gap-3"><button onClick={()=>setConfirmDel(null)} className="flex-1 bg-gray-100 text-gray-500 font-semibold py-3 rounded-xl hover:bg-gray-200 text-sm">取消</button><button onClick={handleDelete} className="flex-1 bg-rose-500 text-white font-bold py-3 rounded-xl hover:bg-rose-600 shadow-md text-sm">確認刪除</button></div>
+            <div className="bg-rose-50 rounded-xl p-4 border border-rose-100 text-center"><div className="text-3xl mb-2">🗑️</div><div className="text-sm">確定刪除 <span className="font-bold text-rose-600">{confirmDel?.name}</span>？</div></div>
+            <div className="flex gap-3"><button onClick={()=>setConfirmDel(null)} className="flex-1 bg-gray-100 text-gray-500 font-semibold py-3 rounded-xl text-sm">取消</button><button onClick={handleDelete} className="flex-1 bg-rose-500 text-white font-bold py-3 rounded-xl shadow-md text-sm">確認刪除</button></div>
           </div>
         </Modal>
 
-        <div className="text-center text-xs text-gray-300 mt-8 pb-4">⬆️ Sample Data · 實際數據由 Form 自動生成</div>
+        <div className="text-center text-xs text-gray-300 mt-8 pb-4">📊 Live Data · 數據來自 Google Sheets</div>
       </div>
     </div>
   );
 }
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<Dashboard />);
+const root=ReactDOM.createRoot(document.getElementById('root'));
+root.render(<Dashboard/>);
 </script>
 </body>
 </html>
