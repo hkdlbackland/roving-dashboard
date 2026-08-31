@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Roving Team Daily Report</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f2f5;min-height:100vh;-webkit-tap-highlight-color:transparent;}
+.header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;padding:28px 20px;text-align:center;border-radius:0 0 24px 24px;box-shadow:0 4px 20px rgba(102,126,234,0.3);}
+.header h1{font-size:20px;font-weight:800;letter-spacing:0.5px;}
+.header p{font-size:13px;opacity:0.85;margin-top:4px;}
+.container{max-width:500px;margin:0 auto;padding:16px;}
+.section{background:#fff;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 2px 10px rgba(0,0,0,0.05);}
+.section-title{font-size:15px;font-weight:700;color:#333;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+label{display:block;font-size:13px;font-weight:600;color:#555;margin-bottom:6px;}
+input[type="date"],select,input[type="number"],input[type="text"],textarea{width:100%;padding:12px 14px;border:2px solid #e8e8e8;border-radius:12px;font-size:15px;transition:border-color 0.2s;-webkit-appearance:none;appearance:none;background:#fff;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,0.1);}
+textarea{resize:vertical;min-height:60px;font-family:inherit;}
+.field-group{margin-bottom:14px;}
+.weather-group{display:flex;gap:10px;}
+.weather-btn{flex:1;padding:14px 8px;border:2.5px solid #e8e8e8;border-radius:14px;background:#fff;font-size:28px;cursor:pointer;transition:all 0.2s;text-align:center;}
+.weather-btn.active{border-color:#667eea;background:linear-gradient(135deg,#f0f0ff,#e8e8ff);transform:scale(1.06);box-shadow:0 3px 12px rgba(102,126,234,0.2);}
+.weather-btn span{display:block;font-size:11px;color:#888;margin-top:4px;}
+.add-btn{width:100%;padding:15px;border:2.5px dashed #667eea;border-radius:14px;background:#f8f8ff;color:#667eea;font-size:15px;font-weight:700;cursor:pointer;transition:all 0.2s;}
+.add-btn:active{background:#f0f0ff;transform:scale(0.98);}
+.member-card{border:2px solid #e8e8e8;border-radius:16px;padding:18px;margin-bottom:14px;position:relative;transition:all 0.3s;animation:slideIn 0.3s ease;}
+@keyframes slideIn{from{opacity:0;transform:translateY(-10px);}to{opacity:1;transform:translateY(0);}}
+.member-card.ic-card{border-color:#667eea;background:linear-gradient(135deg,#f8f8ff 0%,#f0f0ff 100%);}
+.member-card.staff-card{border-color:#764ba2;background:linear-gradient(135deg,#fdf8ff 0%,#f5f0ff 100%);}
+.role-badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;margin-bottom:10px;}
+.ic-card .role-badge{background:#667eea;color:#fff;}
+.staff-card .role-badge{background:#764ba2;color:#fff;}
+.remove-btn{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;border:none;background:#ff4757;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(255,71,87,0.3);}
+.star-rating{display:flex;gap:4px;margin:6px 0;}
+.star-rating .star{font-size:30px;cursor:pointer;color:#ddd;transition:all 0.15s;-webkit-text-stroke:1px #ccc;}
+.star-rating .star.active{color:#ffa502;-webkit-text-stroke:1px #ff9500;transform:scale(1.1);}
+.star-hint{font-size:12px;color:#888;min-height:16px;}
+.counter{display:flex;align-items:center;gap:14px;}
+.counter button{width:42px;height:42px;border-radius:50%;border:2.5px solid #667eea;background:#fff;color:#667eea;font-size:22px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+.counter button:active{background:#667eea;color:#fff;transform:scale(0.95);}
+.counter .count-display{font-size:24px;font-weight:800;color:#333;min-width:44px;text-align:center;}
+.revenue-row{display:flex;gap:12px;margin-bottom:10px;}
+.revenue-row>div{flex:1;}
+.rov-pct{font-size:28px;font-weight:800;color:#667eea;text-align:center;padding:10px 0;}
+.submit-btn{width:100%;padding:17px;border:none;border-radius:14px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;font-size:17px;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:8px;box-shadow:0 4px 15px rgba(102,126,234,0.3);}
+.submit-btn:active{transform:scale(0.98);}
+.submit-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;justify-content:center;align-items:center;padding:20px;}
+.modal-overlay.show{display:flex;}
+.modal{background:#fff;border-radius:20px;padding:24px;max-width:450px;width:100%;max-height:80vh;overflow-y:auto;}
+.modal h2{text-align:center;margin-bottom:16px;font-size:18px;}
+.modal-actions{display:flex;gap:10px;margin-top:20px;}
+.modal-actions button{flex:1;padding:14px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;transition:all 0.15s;}
+.btn-cancel{border:2px solid #ddd;background:#fff;color:#666;}
+.btn-confirm{border:none;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;}
+.btn-confirm:active{transform:scale(0.98);}
+.success-page{display:none;text-align:center;padding:60px 20px;}
+.success-page.show{display:block;}
+.success-icon{font-size:80px;animation:bounceIn 0.6s ease;}
+@keyframes bounceIn{0%{transform:scale(0);opacity:0;}50%{transform:scale(1.25);}100%{transform:scale(1);opacity:1;}}
+.success-page h2{margin:20px 0 10px;color:#333;font-size:22px;}
+.success-page p{color:#888;font-size:15px;}
+.loading{text-align:center;padding:60px 20px;color:#888;font-size:15px;}
+.loading .spinner{display:inline-block;width:40px;height:40px;border:4px solid #e8e8e8;border-top:4px solid #667eea;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:16px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.member-list{max-height:55vh;overflow-y:auto;}
+.member-list-group h3{font-size:13px;color:#888;padding:10px 0 6px;border-bottom:1px solid #eee;}
+.member-option{padding:12px;border-radius:12px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:background 0.15s;}
+.member-option:active{background:#f0f0ff;}
+.member-option .emoji{font-size:22px;}
+.member-option .name{font-weight:600;color:#333;font-size:15px;}
+.member-option .full-name{font-size:12px;color:#999;}
+.member-option.disabled{opacity:0.25;pointer-events:none;}
+.preview-item{background:#f5f5f5;padding:10px 14px;border-radius:10px;margin:6px 0;font-size:14px;line-height:1.6;}
+.preview-info{font-size:14px;line-height:2.2;}
+.preview-info b{color:#333;}
+</style>
+</head>
+<body>
+
+<div class="header" id="mainHeader">
+  <h1>🎯 Roving Team Daily Report</h1>
+  <p>每日表現記錄表</p>
+</div>
+
+<div class="container" id="formContainer">
+  <div class="loading" id="loadingMsg">
+    <div class="spinner"></div>
+    <div>載入名單中...</div>
+  </div>
+
+  <div id="formContent" style="display:none;">
+
+    <!-- Date & Weather & IC -->
+    <div class="section">
+      <div class="section-title">📅 基本資料</div>
+      <div class="field-group">
+        <label>日期</label>
+        <input type="date" id="dateInput">
+      </div>
+      <div class="field-group">
+        <label>天氣</label>
+        <div class="weather-group">
+          <button class="weather-btn" data-weather="sunny" onclick="selectWeather(this)">☀️<span>正常</span></button>
+          <button class="weather-btn" data-weather="cloudy" onclick="selectWeather(this)">🌦️<span>普通</span></button>
+          <button class="weather-btn" data-weather="bad" onclick="selectWeather(this)">⛈️<span>惡劣</span></button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label>當值 IC</label>
+        <select id="icSelect"><option value="">選擇 IC...</option></select>
+      </div>
+    </div>
+
+    <!-- Team Members -->
+    <div class="section">
+      <div class="section-title">👥 團隊成員</div>
+      <div id="memberCards"></div>
+      <button class="add-btn" onclick="openMemberModal()">＋ 加同事</button>
+    </div>
+
+    <!-- FG Cart -->
+    <div class="section">
+      <div class="section-title">🛒 FG Cart 收入</div>
+      <div class="revenue-row">
+        <div>
+          <label>總收入 ($)</label>
+          <input type="number" id="fgTotal" placeholder="0" oninput="calcRovPct()">
+        </div>
+        <div id="rovingField">
+          <label>Roving 收入 ($)</label>
+          <input type="number" id="fgRoving" placeholder="0" oninput="calcRovPct()">
+        </div>
+      </div>
+      <div id="rovPctDisplay" style="display:none;">
+        <label style="text-align:center;">Roving 佔比</label>
+        <div class="rov-pct" id="rovPct">0%</div>
+      </div>
+    </div>
+
+    <button class="submit-btn" onclick="previewSubmit()">📋 預覽並提交</button>
+  </div>
+</div>
+
+<!-- Success Page -->
+<div class="success-page" id="successPage">
+  <div class="success-icon">✅</div>
+  <h2>提交成功！</h2>
+  <p>數據已記錄到 Google Sheets</p>
+  <button class="submit-btn" style="max-width:300px;margin:30px auto 0;" onclick="location.reload()">📝 填寫新記錄</button>
+</div>
+
+<!-- Member Select Modal -->
+<div class="modal-overlay" id="memberModal">
+  <div class="modal">
+    <h2>選擇成員</h2>
+    <div class="member-list" id="memberList"></div>
+    <div class="modal-actions"><button class="btn-cancel" onclick="closeMemberModal()">取消</button></div>
+  </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal-overlay" id="previewModal">
+  <div class="modal">
+    <h2>📋 確認提交</h2>
+    <div id="previewContent"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closePreview()">返回修改</button>
+      <button class="btn-confirm" id="confirmBtn" onclick="submitForm()">✅ 確認提交</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// =====================================================
+// ⚠️ 將下面網址換成你自己嘅 Apps Script Web App URL
+// =====================================================
+const API_URL = 'https://script.google.com/macros/s/AKfycbyC79wwzGLIKx9Dvs8-IWJZt7A_1MG1KXo-rAce1IR4Em33-Zept5iKRmfQnEKg8GQzWg/exec';
+
+let rosterData = { ics: [], staff: [] };
+let members = [];
+let selectedWeather = '';
+
+// --- INIT ---
+window.onload = function() {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth()+1).padStart(2,'0');
+  const dd = String(today.getDate()).padStart(2,'0');
+  document.getElementById('dateInput').value = yyyy+'-'+mm+'-'+dd;
+  loadRosters();
+};
+
+async function loadRosters() {
+  try {
+    const res = await fetch(API_URL + '?action=getRosters');
+    const json = await res.json();
+    if (json.success) {
+      rosterData = json.data;
+      const sel = document.getElementById('icSelect');
+      rosterData.ics.forEach(function(ic) {
+        const opt = document.createElement('option');
+        opt.value = ic.nickname;
+        opt.textContent = ic.nickname + ' (' + ic.fullName + ')';
+        sel.appendChild(opt);
+      });
+      document.getElementById('loadingMsg').style.display = 'none';
+      document.getElementById('formContent').style.display = 'block';
+    } else {
+      document.getElementById('loadingMsg').innerHTML = '❌ 載入失敗：' + json.error;
+    }
+  } catch(err) {
+    document.getElementById('loadingMsg').innerHTML = '❌ 無法連接伺服器<br><small>' + err.message + '</small>';
+  }
+}
+
+// --- WEATHER ---
+function selectWeather(btn) {
+  document.querySelectorAll('.weather-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  selectedWeather = btn.dataset.weather;
+  if (selectedWeather === 'bad') {
+    document.getElementById('rovingField').style.display = 'none';
+    document.getElementById('fgRoving').value = '';
+    document.getElementById('rovPctDisplay').style.display = 'none';
+  } else {
+    document.getElementById('rovingField').style.display = 'block';
+  }
+  calcRovPct();
+}
+
+// --- MEMBER MODAL ---
+function openMemberModal() {
+  var list = document.getElementById('memberList');
+  var addedNames = members.map(function(m){ return m.name; });
+  var icName = document.getElementById('icSelect').value;
+  var html = '';
+
+  html += '<div class="member-list-group"><h3>🧑‍💼 IC</h3>';
+  rosterData.ics.forEach(function(ic, idx) {
+    var dis = (addedNames.indexOf(ic.nickname) !== -1 || ic.nickname === icName) ? 'disabled' : '';
+    html += '<div class="member-option '+dis+'" onclick="selectPerson(\'ic\','+idx+')">';
+    html += '<span class="emoji">🧑‍💼</span>';
+    html += '<div><div class="name">'+ic.nickname+'</div><div class="full-name">'+ic.fullName+'</div></div></div>';
+  });
+  html += '</div>';
+
+  html += '<div class="member-list-group"><h3>👤 同事</h3>';
+  rosterData.staff.forEach(function(s, idx) {
+    var dis = addedNames.indexOf(s.nickname) !== -1 ? 'disabled' : '';
+    html += '<div class="member-option '+dis+'" onclick="selectPerson(\'staff\','+idx+')">';
+    html += '<span class="emoji">👤</span>';
+    html += '<div><div class="name">'+s.nickname+'</div><div class="full-name">'+s.fullName+'</div></div></div>';
+  });
+  html += '</div>';
+
+  list.innerHTML = html;
+  document.getElementById('memberModal').classList.add('show');
+}
+
+function selectPerson(type, idx) {
+  var person = type === 'ic' ? rosterData.ics[idx] : rosterData.staff[idx];
+  members.push({
+    name: person.nickname,
+    fullName: person.fullName,
+    role: type,
+    captures: 0,
+    hitRate: 0,
+    bringBack: 0,
+    remark: ''
+  });
+  closeMemberModal();
+  renderMembers();
+}
+
+function closeMemberModal() {
+  document.getElementById('memberModal').classList.remove('show');
+}
+
+function removeMember(idx) {
+  members.splice(idx, 1);
+  renderMembers();
+}
+
+// --- RENDER MEMBERS ---
+function renderMembers() {
+  var container = document.getElementById('memberCards');
+  var html = '';
+
+  members.forEach(function(m, i) {
+    var isIC = m.role === 'ic';
+    var cls = isIC ? 'ic-card' : 'staff-card';
+    var badge = isIC ? '🧑‍💼 IC' : '👤 同事';
+
+    html += '<div class="member-card '+cls+'">';
+    html += '<button class="remove-btn" onclick="removeMember('+i+')">✕</button>';
+    html += '<span class="role-badge">'+badge+'</span>';
+    html += '<h3 style="font-size:16px;margin-bottom:14px;">'+m.name+'</h3>';
+
+    // Captures
+    html += '<div class="field-group"><label>Captures</label>';
+    html += '<div class="counter">';
+    html += '<button onclick="adjCount('+i+',-1)">−</button>';
+    html += '<span class="count-display" id="cap'+i+'">'+m.captures+'</span>';
+    html += '<button onclick="adjCount('+i+',1)">+</button>';
+    html += '</div></div>';
+
+    // Staff only: stars
+    if (!isIC) {
+      // Hit Rate
+      html += '<div class="field-group"><label>★ Hit Rate</label><div class="star-rating">';
+      for (var s=1; s<=5; s++) {
+        html += '<span class="star '+(s<=m.hitRate?'active':'')+'" onclick="setRate('+i+',\'hitRate\','+s+')">★</span>';
+      }
+      html += '</div><div class="star-hint">'+getHint(m.hitRate)+'</div></div>';
+
+      // Bring Back
+      html += '<div class="field-group"><label>★ 帶返去</label><div class="star-rating">';
+      for (var s2=1; s2<=5; s2++) {
+        html += '<span class="star '+(s2<=m.bringBack?'active':'')+'" onclick="setRate('+i+',\'bringBack\','+s2+')">★</span>';
+      }
+      html += '</div><div class="star-hint">'+getHint(m.bringBack)+'</div></div>';
+    }
+
+    // Remark
+    html += '<div class="field-group"><label>備註</label>';
+    html += '<textarea placeholder="輸入備註..." onchange="members['+i+'].remark=this.value">'+m.remark+'</textarea></div>';
+
+    html += '</div>';
+  });
+
+  container.innerHTML = html;
+}
+
+function adjCount(idx, delta) {
+  members[idx].captures = Math.max(0, members[idx].captures + delta);
+  document.getElementById('cap'+idx).textContent = members[idx].captures;
+}
+
+function setRate(idx, field, val) {
+  members[idx][field] = val;
+  renderMembers();
+}
+
+function getHint(r) {
+  var h = ['','極差','較差','一般','良好','優秀'];
+  return h[r] || '';
+}
+
+// --- FG CART ---
+function calcRovPct() {
+  var total = parseFloat(document.getElementById('fgTotal').value) || 0;
+  var roving = parseFloat(document.getElementById('fgRoving').value) || 0;
+  if (total > 0 && roving > 0 && selectedWeather !== 'bad') {
+    var pct = ((roving/total)*100).toFixed(1);
+    document.getElementById('rovPct').textContent = pct + '%';
+    document.getElementById('rovPctDisplay').style.display = 'block';
+  } else {
+    document.getElementById('rovPctDisplay').style.display = 'none';
+  }
+}
+
+// --- PREVIEW ---
+function previewSubmit() {
+  if (!document.getElementById('dateInput').value) return alert('請選擇日期');
+  if (!selectedWeather) return alert('請選擇天氣');
+  if (!document.getElementById('icSelect').value) return alert('請選擇 IC');
+  if (members.length === 0) return alert('請至少加一位成員');
+
+  var wMap = {sunny:'☀️ 正常', cloudy:'🌦️ 普通', bad:'⛈️ 惡劣'};
+  var total = document.getElementById('fgTotal').value || '0';
+  var roving = document.getElementById('fgRoving').value || '0';
+
+  var html = '<div class="preview-info">';
+  html += '<p><b>日期：</b>'+document.getElementById('dateInput').value+'</p>';
+  html += '<p><b>天氣：</b>'+wMap[selectedWeather]+'</p>';
+  html += '<p><b>IC：</b>'+document.getElementById('icSelect').value+'</p>';
+  html += '<p><b>FG 總收入：</b>$'+total+'</p>';
+  if (selectedWeather !== 'bad') html += '<p><b>Roving 收入：</b>$'+roving+'</p>';
+  html += '</div><hr style="margin:12px 0;border:none;border-top:1px solid #eee;">';
+  html += '<div style="font-size:14px;font-weight:700;margin-bottom:8px;">👥 團隊成員 ('+members.length+'人)</div>';
+
+  members.forEach(function(m) {
+    html += '<div class="preview-item"><b>'+m.name+'</b> <span style="color:#888;">('+( m.role==='ic'?'IC':'同事')+')</span><br>';
+    html += 'Captures: '+m.captures;
+    if (m.role !== 'ic') html += ' ｜ Hit: '+m.hitRate+'★ ｜ 帶返去: '+m.bringBack+'★';
+    if (m.remark) html += '<br><span style="color:#888;">💬 '+m.remark+'</span>';
+    html += '</div>';
+  });
+
+  document.getElementById('previewContent').innerHTML = html;
+  document.getElementById('previewModal').classList.add('show');
+}
+
+function closePreview() {
+  document.getElementById('previewModal').classList.remove('show');
+}
+
+// --- SUBMIT ---
+async function submitForm() {
+  var btn = document.getElementById('confirmBtn');
+  btn.textContent = '提交中...';
+  btn.disabled = true;
+
+  var total = parseFloat(document.getElementById('fgTotal').value) || 0;
+  var roving = parseFloat(document.getElementById('fgRoving').value) || 0;
+  var pct = (total > 0 && selectedWeather !== 'bad') ? ((roving/total)*100).toFixed(1) : '';
+
+  var payload = {
+    action: 'submitForm',
+    date: document.getElementById('dateInput').value,
+    weather: selectedWeather,
+    ic: document.getElementById('icSelect').value,
+    fgTotal: total,
+    fgRoving: selectedWeather !== 'bad' ? roving : '',
+    rovPct: pct,
+    entries: members.map(function(m) {
+      return {
+        name: m.name,
+        role: m.role,
+        captures: m.captures,
+        hitRate: m.role !== 'ic' ? m.hitRate : '',
+        bringBack: m.role !== 'ic' ? m.bringBack : '',
+        remark: m.remark
+      };
+    })
+  };
+
+  try {
+    var res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    var json = await res.json();
+
+    if (json.success) {
+      closePreview();
+      document.getElementById('formContainer').style.display = 'none';
+      document.getElementById('mainHeader').style.display = 'none';
+      document.getElementById('successPage').classList.add('show');
+    } else {
+      alert('提交失敗：' + json.error);
+      btn.textContent = '✅ 確認提交';
+      btn.disabled = false;
+    }
+  } catch(err) {
+    alert('網絡錯誤：' + err.message);
+    btn.textContent = '✅ 確認提交';
+    btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>
