@@ -75,6 +75,8 @@ textarea{resize:vertical;min-height:60px;font-family:inherit;}
 .preview-item{background:#f5f5f5;padding:10px 14px;border-radius:10px;margin:6px 0;font-size:14px;line-height:1.6;}
 .preview-info{font-size:14px;line-height:2.2;}
 .preview-info b{color:#333;}
+.captures-input{width:100%;padding:12px 14px;text-align:center;font-size:20px;font-weight:700;border:2px solid #e8e8e8;border-radius:12px;background:#fff;color:#333;}
+.captures-input:focus{border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,0.1);outline:none;}
 </style>
 </head>
 <body>
@@ -173,9 +175,6 @@ textarea{resize:vertical;min-height:60px;font-family:inherit;}
 </div>
 
 <script>
-// =====================================================
-// ⚠️ 將下面網址換成你自己嘅 Apps Script Web App URL
-// =====================================================
 const API_URL = 'https://script.google.com/macros/s/AKfycbyC79wwzGLIKx9Dvs8-IWJZt7A_1MG1KXo-rAce1IR4Em33-Zept5iKRmfQnEKg8GQzWg/exec';
 
 let rosterData = { ics: [], staff: [] };
@@ -239,6 +238,7 @@ function openMemberModal() {
 
   html += '<div class="member-list-group"><h3>🧑‍💼 IC</h3>';
   rosterData.ics.forEach(function(ic, idx) {
+    // ✅ 修改：IC 唔會因為被選做當值 IC 而灰色，只有已加入成員先會灰色
     var dis = (addedNames.indexOf(ic.nickname) !== -1) ? 'disabled' : '';
     html += '<div class="member-option '+dis+'" onclick="selectPerson(\'ic\','+idx+')">';
     html += '<span class="emoji">🧑‍💼</span>';
@@ -298,13 +298,10 @@ function renderMembers() {
     html += '<span class="role-badge">'+badge+'</span>';
     html += '<h3 style="font-size:16px;margin-bottom:14px;">'+m.name+'</h3>';
 
-    // Captures
+    // ✅ 修改：Captures 改做直接輸入數字（手機會彈數字鍵盤）
     html += '<div class="field-group"><label>Captures</label>';
-    html += '<div class="counter">';
-    html += '<button onclick="adjCount('+i+',-1)">−</button>';
-    html += '<span class="count-display" id="cap'+i+'">'+m.captures+'</span>';
-    html += '<button onclick="adjCount('+i+',1)">+</button>';
-    html += '</div></div>';
+    html += '<input type="number" class="captures-input" id="cap'+i+'" value="'+m.captures+'" min="0" inputmode="numeric" pattern="[0-9]*" placeholder="輸入數字" oninput="updateCaptures('+i+',this)" onfocus="this.select()">';
+    html += '</div>';
 
     // Staff only: stars
     if (!isIC) {
@@ -333,12 +330,19 @@ function renderMembers() {
   container.innerHTML = html;
 }
 
-function adjCount(idx, delta) {
-  members[idx].captures = Math.max(0, members[idx].captures + delta);
-  document.getElementById('cap'+idx).textContent = members[idx].captures;
+// ✅ 新增：更新 Captures 數值
+function updateCaptures(idx, el) {
+  var val = parseInt(el.value) || 0;
+  if (val < 0) { val = 0; el.value = 0; }
+  members[idx].captures = val;
 }
 
 function setRate(idx, field, val) {
+  // 先保存所有 captures 嘅最新值
+  members.forEach(function(m, i) {
+    var capEl = document.getElementById('cap' + i);
+    if (capEl) { m.captures = parseInt(capEl.value) || 0; }
+  });
   members[idx][field] = val;
   renderMembers();
 }
@@ -363,6 +367,12 @@ function calcRovPct() {
 
 // --- PREVIEW ---
 function previewSubmit() {
+  // 先保存所有 captures
+  members.forEach(function(m, i) {
+    var capEl = document.getElementById('cap' + i);
+    if (capEl) { m.captures = parseInt(capEl.value) || 0; }
+  });
+
   if (!document.getElementById('dateInput').value) return alert('請選擇日期');
   if (!selectedWeather) return alert('請選擇天氣');
   if (!document.getElementById('icSelect').value) return alert('請選擇 IC');
