@@ -239,7 +239,7 @@ function openMemberModal() {
 
   html += '<div class="member-list-group"><h3>🧑‍💼 IC</h3>';
   rosterData.ics.forEach(function(ic, idx) {
-    var dis = (addedNames.indexOf(ic.nickname) !== -1 || ic.nickname === icName) ? 'disabled' : '';
+    var dis = (addedNames.indexOf(ic.nickname) !== -1) ? 'disabled' : '';
     html += '<div class="member-option '+dis+'" onclick="selectPerson(\'ic\','+idx+')">';
     html += '<span class="emoji">🧑‍💼</span>';
     html += '<div><div class="name">'+ic.nickname+'</div><div class="full-name">'+ic.fullName+'</div></div></div>';
