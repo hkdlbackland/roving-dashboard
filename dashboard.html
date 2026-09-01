@@ -96,14 +96,19 @@ function getStaffMonthly(name,data){const entries=getStaffEntries(name,data);if(
 function getWeeklyOverview(data,weeks){return weeks.map(w=>{const rows=data.filter(r=>r.date>=w.start&&r.date<=w.end&&r.weather!=='惡劣天氣');if(rows.length===0)return{...w,avgC:0,avgH:0,avgB:0,fgT:0,fgR:0,pct:'0%'};let tC=0,tH=0,tB=0,cnt=0,fgT=0,fgR=0;rows.forEach(r=>{[1,2,3].forEach(i=>{if(r[`s${i}`]){tC+=r[`c${i}`]||0;tH+=r[`h${i}`]||0;tB+=r[`b${i}`]||0;cnt++;}});fgT+=r.fgT||0;fgR+=r.fgR||0;});return{...w,avgC:cnt?(tC/cnt).toFixed(1):0,avgH:cnt?(tH/cnt).toFixed(1):0,avgB:cnt?(tB/cnt).toFixed(1):0,fgT,fgR,pct:fgT?(fgR/fgT*100).toFixed(1)+'%':'0%'};});}
 function getWeatherStats(data){const stats={};data.forEach(r=>{if(!stats[r.weather])stats[r.weather]={days:0,fgTs:[],fgRs:[],hrs:[],brs:[]};stats[r.weather].days++;if(r.fgT)stats[r.weather].fgTs.push(r.fgT);if(r.fgR)stats[r.weather].fgRs.push(r.fgR);[1,2,3].forEach(i=>{if(r[`h${i}`])stats[r.weather].hrs.push(r[`h${i}`]);if(r[`b${i}`])stats[r.weather].brs.push(r[`b${i}`]);});});return Object.entries(stats).map(([w,d])=>({weather:w,days:d.days,avgFgT:d.fgTs.length?Math.round(d.fgTs.reduce((a,b)=>a+b,0)/d.fgTs.length):'-',avgFgR:d.fgRs.length?Math.round(d.fgRs.reduce((a,b)=>a+b,0)/d.fgRs.length):'-',avgH:d.hrs.length?(d.hrs.reduce((a,b)=>a+b,0)/d.hrs.length).toFixed(1):'-',avgB:d.brs.length?(d.brs.reduce((a,b)=>a+b,0)/d.brs.length).toFixed(1):'-',pct:d.fgTs.length?(d.fgRs.reduce((a,b)=>a+b,0)/d.fgTs.reduce((a,b)=>a+b,0)*100).toFixed(1)+'%':'-'}));}
 function getICList(data){const s=new Set();data.forEach(r=>s.add(r.ic));return Array.from(s).sort();}
-function getICStats(icName,data){const records=data.filter(r=>r.ic===icName);const workRecs=records.filter(r=>r.weather!=='惡劣天氣');let totalCap=0,rovStaffCnt=0,fgT=0,fgR=0,tH=0,tB=0;workRecs.forEach(r=>{[1,2,3].forEach(i=>{if(r[`s${i}`]){totalCap+=r[`c${i}`]||0;tH+=r[`h${i}`]||0;tB+=r[`b${i}`]||0;rovStaffCnt++;}});fgT+=r.fgT||0;fgR+=r.fgR||0;});const totalHeadcount=rovStaffCnt+workRecs.length;return{totalDays:records.length,workDays:workRecs.length,cancelDays:records.length-workRecs.length,totalCap,rovStaffCnt,avgRovStaff:workRecs.length>0?(rovStaffCnt/workRecs.length).toFixed(1):'-',avgHeadcount:workRecs.length>0?(totalHeadcount/workRecs.length).toFixed(1):'-',avgCapPerStaff:rovStaffCnt>0?(totalCap/rovStaffCnt).toFixed(1):'-',avgCapPerDay:workRecs.length>0?(totalCap/workRecs.length).toFixed(1):'-',avgH:rovStaffCnt>0?(tH/rovStaffCnt).toFixed(1):'-',avgB:rovStaffCnt>0?(tB/rovStaffCnt).toFixed(1):'-',fgT,fgR,fgDailyAvg:workRecs.length>0?Math.round(fgT/workRecs.length):0,rovPct:fgT>0?(fgR/fgT*100).toFixed(1):0,rovPctStr:fgT>0?(fgR/fgT*100).toFixed(1)+'%':'-'};}
+
+// ★★★ 修改：人手 = 當日 staff entry 數量（IC 已包含在 s1/s2/s3 入面）★★★
+function getICStats(icName,data){const records=data.filter(r=>r.ic===icName);const workRecs=records.filter(r=>r.weather!=='惡劣天氣');let totalCap=0,rovStaffCnt=0,fgT=0,fgR=0,tH=0,tB=0;workRecs.forEach(r=>{[1,2,3].forEach(i=>{if(r[`s${i}`]){totalCap+=r[`c${i}`]||0;tH+=r[`h${i}`]||0;tB+=r[`b${i}`]||0;rovStaffCnt++;}});fgT+=r.fgT||0;fgR+=r.fgR||0;});const totalHeadcount=rovStaffCnt;return{totalDays:records.length,workDays:workRecs.length,cancelDays:records.length-workRecs.length,totalCap,rovStaffCnt,avgRovStaff:workRecs.length>0?(rovStaffCnt/workRecs.length).toFixed(1):'-',avgHeadcount:workRecs.length>0?(totalHeadcount/workRecs.length).toFixed(1):'-',avgCapPerStaff:rovStaffCnt>0?(totalCap/rovStaffCnt).toFixed(1):'-',avgCapPerDay:workRecs.length>0?(totalCap/workRecs.length).toFixed(1):'-',avgH:rovStaffCnt>0?(tH/rovStaffCnt).toFixed(1):'-',avgB:rovStaffCnt>0?(tB/rovStaffCnt).toFixed(1):'-',fgT,fgR,fgDailyAvg:workRecs.length>0?Math.round(fgT/workRecs.length):0,rovPct:fgT>0?(fgR/fgT*100).toFixed(1):0,rovPctStr:fgT>0?(fgR/fgT*100).toFixed(1)+'%':'-'};}
+
 function rankICs(data){const icList=getICList(data);const statsArr=icList.map(ic=>({name:ic,...getICStats(ic,data)})).filter(s=>s.workDays>0);if(statsArr.length===0)return[];const maxCap=Math.max(...statsArr.map(s=>parseFloat(s.avgCapPerDay)||0));const maxFgD=Math.max(...statsArr.map(s=>s.fgDailyAvg||0));const maxRov=Math.max(...statsArr.map(s=>parseFloat(s.rovPct)||0));const maxH=Math.max(...statsArr.map(s=>parseFloat(s.avgH)||0));const maxB=Math.max(...statsArr.map(s=>parseFloat(s.avgB)||0));return statsArr.map(s=>{const sCapDay=maxCap>0?((parseFloat(s.avgCapPerDay)||0)/maxCap)*30:0;const sFgD=maxFgD>0?((s.fgDailyAvg||0)/maxFgD)*25:0;const sRov=maxRov>0?((parseFloat(s.rovPct)||0)/maxRov)*20:0;const sH=maxH>0?((parseFloat(s.avgH)||0)/maxH)*15:0;const sB=maxB>0?((parseFloat(s.avgB)||0)/maxB)*10:0;const score=sCapDay+sFgD+sRov+sH+sB;return{...s,score:Math.round(score*10)/10,breakdown:{cap:Math.round(sCapDay*10)/10,fg:Math.round(sFgD*10)/10,rov:Math.round(sRov*10)/10,hit:Math.round(sH*10)/10,bring:Math.round(sB*10)/10}};}).sort((a,b)=>b.score-a.score);}
 function genICComment(ranked){if(!ranked||ranked.length===0)return'';const top=ranked[0];const parts=[`${top._sn} 整體表現最突出`];if(parseFloat(top.avgCapPerDay)>0)parts.push(`日均 Capture ${top.avgCapPerDay} 組`);if(top.fgDailyAvg>0)parts.push(`日均 FG $${top.fgDailyAvg.toLocaleString()}`);if(parseFloat(top.rovPct)>0)parts.push(`Roving 佔比 ${top.rovPctStr}`);let comment=parts.join('，');if(ranked.length>1){const last=ranked[ranked.length-1];const gap=(top.score-last.score).toFixed(1);comment+=`。與排尾 ${last._sn} 相差 ${gap} 分`;if(parseFloat(last.avgCapPerDay)<parseFloat(top.avgCapPerDay)*0.7){comment+=`，${last._sn} 日均 Capture 偏低（${last.avgCapPerDay}），建議跟進`;}}return comment+'。';}
 function getStaffUnderIC(icName,data){const map={};data.filter(r=>r.ic===icName&&r.weather!=='惡劣天氣').forEach(r=>{[1,2,3].forEach(i=>{const n=r[`s${i}`];if(n){if(!map[n])map[n]={days:0,tC:0,tH:0,tB:0};map[n].days++;map[n].tC+=r[`c${i}`]||0;map[n].tH+=r[`h${i}`]||0;map[n].tB+=r[`b${i}`]||0;}});});return Object.entries(map).map(([n,d])=>({name:n,days:d.days,totalC:d.tC,avgC:(d.tC/d.days).toFixed(1),avgH:(d.tH/d.days).toFixed(1),avgB:(d.tB/d.days).toFixed(1)})).sort((a,b)=>b.totalC-a.totalC);}
 function calcYearSummary(year){const months=AVAILABLE_MONTHS_BY_YEAR[year]||[];let totalCap=0,fgT=0,fgR=0,workDays=0,totalDays=0,staffCnt=0;months.forEach(m=>{const key=`${year}-${String(m).padStart(2,'0')}`;const d=ALL_DATA[key]||[];d.forEach(r=>{totalDays++;if(r.weather!=='惡劣天氣'){workDays++;[1,2,3].forEach(i=>{if(r[`s${i}`]){totalCap+=r[`c${i}`]||0;staffCnt++;}});fgT+=r.fgT||0;fgR+=r.fgR||0;}});});return{totalCap,fgT,fgR,workDays,totalDays,avgCap:staffCnt>0?(totalCap/staffCnt).toFixed(1):'-',rovPct:fgT>0?(fgR/fgT*100).toFixed(1):'-',months:months.length};}
 function getYearlyMonthly(year){const months=AVAILABLE_MONTHS_BY_YEAR[year]||[];return months.map(m=>{const key=`${year}-${String(m).padStart(2,'0')}`;const d=ALL_DATA[key]||[];const wd=d.filter(r=>r.weather!=='惡劣天氣');let tC=0,cnt=0,fgT=0,fgR=0;wd.forEach(r=>{[1,2,3].forEach(i=>{if(r[`s${i}`]){tC+=r[`c${i}`]||0;cnt++;}});fgT+=r.fgT||0;fgR+=r.fgR||0;});return{month:m,label:MONTHS_LABEL[m],totalDays:d.length,workDays:wd.length,totalCap:tC,avgCap:cnt>0?(tC/cnt).toFixed(1):'-',fgT,fgR,rovPct:fgT>0?(fgR/fgT*100).toFixed(1):'-'};});}
 function getYearlyStaffRank(year){const months=AVAILABLE_MONTHS_BY_YEAR[year]||[];const map={};months.forEach(m=>{const key=`${year}-${String(m).padStart(2,'0')}`;const d=ALL_DATA[key]||[];d.filter(r=>r.weather!=='惡劣天氣').forEach(r=>{[1,2,3].forEach(i=>{const n=r[`s${i}`];if(n){if(!map[n])map[n]={days:0,tC:0,tH:0,tB:0,months:new Set()};map[n].days++;map[n].tC+=r[`c${i}`]||0;map[n].tH+=r[`h${i}`]||0;map[n].tB+=r[`b${i}`]||0;map[n].months.add(m);}});});});return Object.entries(map).map(([n,d])=>({name:n,days:d.days,totalC:d.tC,avgC:(d.tC/d.days).toFixed(1),avgH:(d.tH/d.days).toFixed(1),avgB:(d.tB/d.days).toFixed(1),mths:d.months.size})).sort((a,b)=>b.totalC-a.totalC);}
-function getYearlyICRank(year){const months=AVAILABLE_MONTHS_BY_YEAR[year]||[];const map={};months.forEach(m=>{const key=`${year}-${String(m).padStart(2,'0')}`;const d=ALL_DATA[key]||[];d.forEach(r=>{const n=r.ic;if(!map[n])map[n]={days:0,workDays:0,tC:0,sCnt:0,fgT:0,fgR:0};map[n].days++;if(r.weather!=='惡劣天氣'){map[n].workDays++;[1,2,3].forEach(i=>{if(r[`s${i}`]){map[n].tC+=r[`c${i}`]||0;map[n].sCnt++;}});map[n].fgT+=r.fgT||0;map[n].fgR+=r.fgR||0;}});});return Object.entries(map).map(([n,d])=>{const totalHC=d.sCnt+d.workDays;return{name:n,days:d.days,workDays:d.workDays,totalCap:d.tC,avgHeadcount:d.workDays>0?(totalHC/d.workDays).toFixed(1):'-',avgCapPerStaff:d.sCnt>0?(d.tC/d.sCnt).toFixed(1):'-',avgCapPerDay:d.workDays>0?(d.tC/d.workDays).toFixed(1):'-',fgT:d.fgT,fgR:d.fgR,fgDailyAvg:d.workDays>0?Math.round(d.fgT/d.workDays):0,rovPct:d.fgT>0?(d.fgR/d.fgT*100).toFixed(1)+'%':'-'};}).sort((a,b)=>b.totalCap-a.totalCap);}
+
+// ★★★ 修改：年度 IC 人手同樣唔再 +1 ★★★
+function getYearlyICRank(year){const months=AVAILABLE_MONTHS_BY_YEAR[year]||[];const map={};months.forEach(m=>{const key=`${year}-${String(m).padStart(2,'0')}`;const d=ALL_DATA[key]||[];d.forEach(r=>{const n=r.ic;if(!map[n])map[n]={days:0,workDays:0,tC:0,sCnt:0,fgT:0,fgR:0};map[n].days++;if(r.weather!=='惡劣天氣'){map[n].workDays++;[1,2,3].forEach(i=>{if(r[`s${i}`]){map[n].tC+=r[`c${i}`]||0;map[n].sCnt++;}});map[n].fgT+=r.fgT||0;map[n].fgR+=r.fgR||0;}});});return Object.entries(map).map(([n,d])=>{const totalHC=d.sCnt;return{name:n,days:d.days,workDays:d.workDays,totalCap:d.tC,avgHeadcount:d.workDays>0?(totalHC/d.workDays).toFixed(1):'-',avgCapPerStaff:d.sCnt>0?(d.tC/d.sCnt).toFixed(1):'-',avgCapPerDay:d.workDays>0?(d.tC/d.workDays).toFixed(1):'-',fgT:d.fgT,fgR:d.fgR,fgDailyAvg:d.workDays>0?Math.round(d.fgT/d.workDays):0,rovPct:d.fgT>0?(d.fgR/d.fgT*100).toFixed(1)+'%':'-'};}).sort((a,b)=>b.totalCap-a.totalCap);}
 
 // ═══════════════════════════════════════
 // 🚀 DASHBOARD WRAPPER (fetches data)
@@ -112,7 +117,7 @@ function Dashboard(){
   const[ready,setReady]=useState(false);
   const[err,setErr]=useState('');
   const[loadedRosters,setLoadedRosters]=useState(null);
-  const[rawResponses,setRawResponses]=useState([]);  // ★ 新增
+  const[rawResponses,setRawResponses]=useState([]);
 
   useEffect(()=>{
     Promise.all([
@@ -124,7 +129,7 @@ function Dashboard(){
       setLoadedRosters({ics,staff});
 
       const rows=respRes.data||[];
-      setRawResponses(rows);  // ★ 新增：儲存原始數據
+      setRawResponses(rows);
       if(rows.length===0){
         ALL_DATA={};AVAILABLE_MONTHS_BY_YEAR={};AVAILABLE_YEARS=[];
       }else{
@@ -187,20 +192,18 @@ function DashboardContent({initICs,initStaff,rawResponses}){
   const[newNick,setNewNick]=useState('');
   const[toast,setToast]=useState('');
   const[confirmDel,setConfirmDel]=useState(null);
-  const[deletingRow,setDeletingRow]=useState(null);  // ★ 新增：刪除中狀態
+  const[deletingRow,setDeletingRow]=useState(null);
 
   const nicknameMap=useMemo(()=>{const m={};[...icRoster,...staffRoster].forEach(r=>{m[r.fullName]=r.nickname;});return m;},[icRoster,staffRoster]);
   const sn=(name)=>nicknameMap[name]||name.split(' ').pop();
   const showToast=(msg)=>{setToast(msg);setTimeout(()=>setToast(''),2500);};
   const wIcon=(w)=>w==='晴天'?'☀️':w==='間歇落雨'?'🌦️':'⛈️';
 
-  // ★★★ 新增：篩選當月原始記錄 ★★★
   const filteredRaw=useMemo(()=>{
     const prefix=`${selYear}-${String(selMonth).padStart(2,'0')}`;
     return rawResponses.filter(row=>{const d=parseDate(row.date);return d.startsWith(prefix);}).sort((a,b)=>parseDate(b.date).localeCompare(parseDate(a.date)));
   },[rawResponses,selYear,selMonth]);
 
-  // ★★★ 新增：刪除記錄 ★★★
   const handleDeleteRecord=async(row)=>{
     if(deletingRow)return;
     const name=String(row.name||'');
@@ -216,7 +219,6 @@ function DashboardContent({initICs,initStaff,rawResponses}){
     }catch(e){showToast('❌ 刪除失敗：'+e.message);setDeletingRow(null);}
   };
 
-  // ======= API-connected Roster Handlers =======
   const toggleActive=async(type,id)=>{
     const roster=type==='ic'?icRoster:staffRoster;
     const item=roster.find(r=>r.id===id);if(!item)return;
