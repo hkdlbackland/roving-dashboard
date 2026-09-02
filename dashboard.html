@@ -26,7 +26,21 @@ const{BarChart,Bar,XAxis,YAxis,CartesianGrid,Tooltip,ResponsiveContainer,PieChar
 // ═══════════════════════════════════════
 // 🔄 DATA TRANSFORMATION
 // ═══════════════════════════════════════
-function parseDate(val){if(!val)return'';const s=String(val);if(s.includes('T'))return s.split('T')[0];if(s.includes('/')){const p=s.split('/');if(p.length===3&&p[2].length===4)return p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');if(p.length===3&&p[0].length===4)return p[0]+'-'+p[1].padStart(2,'0')+'-'+p[2].padStart(2,'0');}if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;try{const d=new Date(s);if(!isNaN(d))return d.toISOString().split('T')[0];}catch(e){}return s;}
+function parseDate(val){
+  if(!val)return'';
+  const s=String(val);
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
+  try{
+    const d=new Date(s);
+    if(!isNaN(d))return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }catch(e){}
+  if(s.includes('/')){
+    const p=s.split('/');
+    if(p.length===3&&p[2].length===4)return p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');
+    if(p.length===3&&p[0].length===4)return p[0]+'-'+p[1].padStart(2,'0')+'-'+p[2].padStart(2,'0');
+  }
+  return s;
+}
 
 function transformResponses(rows){
   if(!rows||!Array.isArray(rows))return[];
