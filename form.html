@@ -490,12 +490,12 @@ async function submitForm() {
   var roving = parseFloat(document.getElementById('fgRoving').value) || 0;
   var pct = (total > 0 && selectedWeather !== 'bad') ? ((roving/total)*100).toFixed(1) : '';
 
-  var payload = {
+var payload = {
     action: 'submitForm',
     date: document.getElementById('dateInput').value,
     weather: selectedWeather,
-    // ✅ 合併兩個 IC 送出
-    ic: getICDisplay(),
+    ic: document.getElementById('icSelect1').value,     // ✅ IC 1
+    ic2: document.getElementById('icSelect2').value || '', // ✅ IC 2
     fgTotal: total,
     fgRoving: selectedWeather !== 'bad' ? roving : '',
     rovPct: pct,
