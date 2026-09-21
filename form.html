@@ -36,7 +36,14 @@ textarea{resize:vertical;min-height:60px;font-family:inherit;}
 .star-rating{display:flex;gap:4px;margin:6px 0;}
 .star-rating .star{font-size:30px;cursor:pointer;color:#ddd;transition:all 0.15s;-webkit-text-stroke:1px #ccc;}
 .star-rating .star.active{color:#ffa502;-webkit-text-stroke:1px #ff9500;transform:scale(1.1);}
-.star-hint{font-size:12px;color:#888;min-height:16px;}
+.star-hint{min-height:26px;margin-top:4px;}
+.star-hint-tag{display:inline-block;padding:4px 10px;border-radius:8px;font-size:12px;font-weight:600;animation:fadeIn 0.25s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
+.star-hint-1{background:#fff0f0;color:#e74c3c;border:1px solid #fcc;}
+.star-hint-2{background:#fff6ec;color:#e67e22;border:1px solid #fde0b5;}
+.star-hint-3{background:#fffbe6;color:#b7950b;border:1px solid #f5e6a3;}
+.star-hint-4{background:#eafaf1;color:#27ae60;border:1px solid #a9dfbf;}
+.star-hint-5{background:#eaf0ff;color:#667eea;border:1px solid #b8c9ff;}
 .counter{display:flex;align-items:center;gap:14px;}
 .counter button{width:42px;height:42px;border-radius:50%;border:2.5px solid #667eea;background:#fff;color:#667eea;font-size:22px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
 .counter button:active{background:#667eea;color:#fff;transform:scale(0.95);}
@@ -98,7 +105,6 @@ textarea{resize:vertical;min-height:60px;font-family:inherit;}
 
   <div id="formContent" style="display:none;">
 
-    <!-- Date & Weather & IC -->
     <div class="section">
       <div class="section-title">📅 基本資料</div>
       <div class="field-group">
@@ -113,7 +119,6 @@ textarea{resize:vertical;min-height:60px;font-family:inherit;}
           <button class="weather-btn" data-weather="bad" onclick="selectWeather(this)">⛈️<span>惡劣</span></button>
         </div>
       </div>
-      <!-- IC 選擇 -->
       <div class="field-group">
         <label>當值 IC</label>
         <div class="ic-row">
@@ -129,14 +134,12 @@ textarea{resize:vertical;min-height:60px;font-family:inherit;}
       </div>
     </div>
 
-    <!-- Team Members -->
     <div class="section" id="teamSection">
       <div class="section-title">👥 團隊成員</div>
       <div id="memberCards"></div>
       <button class="add-btn" onclick="openMemberModal()">＋ 加同事</button>
     </div>
 
-    <!-- Bad Weather Notice -->
     <div class="section" id="badWeatherNotice" style="display:none;">
       <div style="text-align:center;padding:16px 0;">
         <div style="font-size:44px;margin-bottom:8px;">⛈️🌊</div>
@@ -145,7 +148,6 @@ textarea{resize:vertical;min-height:60px;font-family:inherit;}
       </div>
     </div>
 
-    <!-- FG Cart -->
     <div class="section">
       <div class="section-title">🛒 FG Cart 收入</div>
       <div class="revenue-row">
@@ -168,7 +170,6 @@ textarea{resize:vertical;min-height:60px;font-family:inherit;}
   </div>
 </div>
 
-<!-- Success Page -->
 <div class="success-page" id="successPage">
   <div class="success-icon">✅</div>
   <h2>提交成功！</h2>
@@ -176,7 +177,6 @@ textarea{resize:vertical;min-height:60px;font-family:inherit;}
   <button class="submit-btn" style="max-width:300px;margin:30px auto 0;" onclick="location.reload()">📝 填寫新記錄</button>
 </div>
 
-<!-- Member Select Modal -->
 <div class="modal-overlay" id="memberModal">
   <div class="modal">
     <h2>選擇成員</h2>
@@ -185,7 +185,6 @@ textarea{resize:vertical;min-height:60px;font-family:inherit;}
   </div>
 </div>
 
-<!-- Preview Modal -->
 <div class="modal-overlay" id="previewModal">
   <div class="modal">
     <h2>📋 確認提交</h2>
@@ -204,7 +203,25 @@ let rosterData = { ics: [], staff: [] };
 let members = [];
 let selectedWeather = '';
 
-// ✅ 合併取得 IC 顯示文字
+// ✅ 星星解說（帶顏色 tag）
+var hitRateHints = [
+  '',
+  '<span class="star-hint-tag star-hint-1">😴 一個鐘都搵唔到1組客，基本上企定等</span>',
+  '<span class="star-hint-tag star-hint-2">😐 一個鐘大約搵到1組客，主動性不足</span>',
+  '<span class="star-hint-tag star-hint-3">👌 一個鐘搵到2組客，差少少先達標</span>',
+  '<span class="star-hint-tag star-hint-4">👍 一個鐘穩定搵到3組客，達標</span>',
+  '<span class="star-hint-tag star-hint-5">🔥 一個鐘搵到4組或以上，超標表現</span>'
+];
+
+var bringBackHints = [
+  '',
+  '<span class="star-hint-tag star-hint-1">😴 基本上帶唔到客人去 FG Cart</span>',
+  '<span class="star-hint-tag star-hint-2">😐 偶爾帶到，成功率偏低</span>',
+  '<span class="star-hint-tag star-hint-3">👌 3組客大約帶到1組，基本合格</span>',
+  '<span class="star-hint-tag star-hint-4">👍 3組客穩定帶到1-2組，達標</span>',
+  '<span class="star-hint-tag star-hint-5">🔥 3組客帶到2組以上，表現出色</span>'
+];
+
 function getICDisplay() {
   var ic1 = document.getElementById('icSelect1').value;
   var ic2 = document.getElementById('icSelect2').value;
@@ -213,7 +230,6 @@ function getICDisplay() {
   return '';
 }
 
-// ✅ IC 1 選擇後，自動更新 IC 2 嘅選項（排除 IC 1 已選嘅人）
 function updateIC2Options() {
   var ic1Val = document.getElementById('icSelect1').value;
   var sel2 = document.getElementById('icSelect2');
@@ -236,12 +252,9 @@ function updateIC2Options() {
   }
 }
 
-// ✅ 新增：自動同步 IC 到團隊成員
 function syncICMembers() {
-  // 如果係惡劣天氣，唔加 IC 入 members
   if (selectedWeather === 'bad') return;
 
-  // 1. 先同步 DOM 入面嘅 captures / remark 到 members array（避免 re-render 丟失）
   members.forEach(function(m, i) {
     var capEl = document.getElementById('cap' + i);
     if (capEl) m.captures = parseInt(capEl.value) || 0;
@@ -249,7 +262,6 @@ function syncICMembers() {
     if (remEl) m.remark = remEl.value;
   });
 
-  // 2. 記低現有 autoIC 嘅數據（之後要還原）
   var autoICData = {};
   members.forEach(function(m) {
     if (m.autoIC) {
@@ -257,14 +269,11 @@ function syncICMembers() {
     }
   });
 
-  // 3. 移除所有 autoIC
   members = members.filter(function(m) { return !m.autoIC; });
 
-  // 4. 讀取當前 IC 選擇
   var ic1Val = document.getElementById('icSelect1').value;
   var ic2Val = document.getElementById('icSelect2').value;
 
-  // 5. 加入 IC1（如果有揀 + 未被手動加入）
   if (ic1Val && !members.some(function(m) { return m.name === ic1Val; })) {
     var ic1Person = rosterData.ics.find(function(ic) { return ic.nickname === ic1Val; });
     if (ic1Person) {
@@ -282,7 +291,6 @@ function syncICMembers() {
     }
   }
 
-  // 6. 加入 IC2（如果有揀 + 未被手動加入）
   if (ic2Val && !members.some(function(m) { return m.name === ic2Val; })) {
     var ic2Person = rosterData.ics.find(function(ic) { return ic.nickname === ic2Val; });
     if (ic2Person) {
@@ -301,11 +309,9 @@ function syncICMembers() {
     }
   }
 
-  // 7. 重新渲染
   renderMembers();
 }
 
-// --- INIT ---
 window.onload = function() {
   const today = new Date();
   const yyyy = today.getFullYear();
@@ -348,7 +354,6 @@ async function loadRosters() {
   }
 }
 
-// --- WEATHER ---
 function selectWeather(btn) {
   document.querySelectorAll('.weather-btn').forEach(function(b){ b.classList.remove('active'); });
   btn.classList.add('active');
@@ -366,13 +371,11 @@ function selectWeather(btn) {
     document.getElementById('rovingField').style.display = 'block';
     document.getElementById('teamSection').style.display = 'block';
     document.getElementById('badWeatherNotice').style.display = 'none';
-    // ✅ 切返正常天氣時，自動補返 IC 入團隊
     syncICMembers();
   }
   calcRovPct();
 }
 
-// --- MEMBER MODAL ---
 function openMemberModal() {
   var list = document.getElementById('memberList');
   var addedNames = members.map(function(m){ return m.name; });
@@ -421,13 +424,11 @@ function closeMemberModal() {
 }
 
 function removeMember(idx) {
-  // ✅ 自動加入嘅 IC 唔俾刪（安全檢查）
   if (members[idx].autoIC) return;
   members.splice(idx, 1);
   renderMembers();
 }
 
-// --- RENDER MEMBERS ---
 function renderMembers() {
   var container = document.getElementById('memberCards');
   var html = '';
@@ -439,13 +440,11 @@ function renderMembers() {
 
     html += '<div class="member-card '+cls+'">';
 
-    // ✅ 自動加入嘅 IC 唔顯示刪除鍵
     if (!m.autoIC) {
       html += '<button class="remove-btn" onclick="removeMember('+i+')">✕</button>';
     }
 
     html += '<span class="role-badge">'+badge+'</span>';
-    // ✅ 自動加入嘅 IC 顯示標籤
     if (m.autoIC) {
       html += '<span class="auto-badge">自動加入</span>';
     }
@@ -460,13 +459,13 @@ function renderMembers() {
       for (var s=1; s<=5; s++) {
         html += '<span class="star '+(s<=m.hitRate?'active':'')+'" onclick="setRate('+i+',\'hitRate\','+s+')">★</span>';
       }
-      html += '</div><div class="star-hint">'+getHint(m.hitRate)+'</div></div>';
+      html += '</div><div class="star-hint">'+(hitRateHints[m.hitRate] || '')+'</div></div>';
 
       html += '<div class="field-group"><label>★ 帶返去 FG Cart <span class="label-sub">（3組客帶到1-2組）</span></label><div class="star-rating">';
       for (var s2=1; s2<=5; s2++) {
         html += '<span class="star '+(s2<=m.bringBack?'active':'')+'" onclick="setRate('+i+',\'bringBack\','+s2+')">★</span>';
       }
-      html += '</div><div class="star-hint">'+getHint(m.bringBack)+'</div></div>';
+      html += '</div><div class="star-hint">'+(bringBackHints[m.bringBack] || '')+'</div></div>';
     }
 
     html += '<div class="field-group"><label>備註</label>';
@@ -495,12 +494,6 @@ function setRate(idx, field, val) {
   renderMembers();
 }
 
-function getHint(r) {
-  var h = ['','極差','較差','一般','良好','優秀'];
-  return h[r] || '';
-}
-
-// --- FG CART ---
 function calcRovPct() {
   var total = parseFloat(document.getElementById('fgTotal').value) || 0;
   var roving = parseFloat(document.getElementById('fgRoving').value) || 0;
@@ -513,7 +506,6 @@ function calcRovPct() {
   }
 }
 
-// --- PREVIEW ---
 function previewSubmit() {
   members.forEach(function(m, i) {
     var capEl = document.getElementById('cap' + i);
@@ -561,7 +553,6 @@ function closePreview() {
   document.getElementById('previewModal').classList.remove('show');
 }
 
-// --- SUBMIT ---
 async function submitForm() {
   var btn = document.getElementById('confirmBtn');
   btn.textContent = '提交中...';
