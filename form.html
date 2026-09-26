@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Roving Team Daily Report</title>
 <link rel="preconnect" href="https://script.google.com" crossorigin>
 <link rel="dns-prefetch" href="https://script.google.com">
@@ -83,13 +86,9 @@ textarea{resize:vertical;min-height:60px;font-family:inherit;}
 .label-sub{font-size:11px;font-weight:400;color:#999;margin-left:2px;}
 .ic-row{display:flex;gap:10px;}
 .ic-row>div{flex:1;}
-
-/* ✅ 新增：IC 載入中提示 */
 .ic-loading-hint{font-size:11px;color:#667eea;margin-top:4px;display:flex;align-items:center;gap:4px;}
 .ic-loading-hint .mini-spin{display:inline-block;width:12px;height:12px;border:2px solid #e0e7ff;border-top:2px solid #667eea;border-radius:50%;animation:spin 0.8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
-
-/* ✅ 新增：Toast */
 .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);padding:14px 24px;border-radius:14px;font-size:14px;font-weight:600;z-index:9999;box-shadow:0 6px 24px rgba(0,0,0,0.15);transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1);white-space:nowrap;max-width:90vw;}
 .toast.show{transform:translateX(-50%) translateY(0);}
 .toast-success{background:#00b894;color:#fff;}
@@ -106,8 +105,6 @@ textarea{resize:vertical;min-height:60px;font-family:inherit;}
 </div>
 
 <div class="container" id="formContainer">
-
-  <!-- ✅ 唔再用 loading 擋住成個 form -->
   <div id="formContent">
 
     <div class="section">
@@ -136,7 +133,6 @@ textarea{resize:vertical;min-height:60px;font-family:inherit;}
             <select id="icSelect2" onchange="syncICMembers()"><option value="">無</option></select>
           </div>
         </div>
-        <!-- ✅ IC 載入中提示（名單未到時顯示） -->
         <div class="ic-loading-hint" id="icLoadingHint" style="display:none;">
           <span class="mini-spin"></span> 名單載入中，請先填其他欄位...
         </div>
@@ -206,19 +202,17 @@ textarea{resize:vertical;min-height:60px;font-family:inherit;}
 </div>
 
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbyC79wwzGLIKx9Dvs8-IWJZt7A_1MG1KXo-rAce1IR4Em33-Zept5iKRmfQnEKg8GQzWg/exec';
-const CACHE_KEY = 'rovingRosterCache';
-const CACHE_TS_KEY = 'rovingRosterCacheTS';
-const CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 小時
+var API_URL = 'https://script.google.com/macros/s/AKfycbyC79wwzGLIKx9Dvs8-IWJZt7A_1MG1KXo-rAce1IR4Em33-Zept5iKRmfQnEKg8GQzWg/exec';
+var CACHE_KEY = 'rovingRosterCache';
+var CACHE_TS_KEY = 'rovingRosterCacheTS';
+var CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
 
-let rosterData = { ics: [], staff: [] };
-let rosterReady = false;
-let members = [];
-let selectedWeather = '';
+var rosterData = { ics: [], staff: [] };
+var rosterReady = false;
+var members = [];
+var selectedWeather = '';
 
-/* ═══════════════════════════════════════════
-   Toast
-   ═══════════════════════════════════════════ */
+/* ═══════ Toast ═══════ */
 function showToast(msg, type, duration) {
   type = type || 'success';
   duration = duration || 3000;
@@ -229,13 +223,9 @@ function showToast(msg, type, duration) {
   t._timer = setTimeout(function() { t.classList.remove('show'); }, duration);
 }
 
-/* ═══════════════════════════════════════════
-   ✅ 核心：3 層載入策略
-   Layer 1 — localStorage 快取（即刻）
-   Layer 2 — fetch 最新名單（背景更新）
-   ═══════════════════════════════════════════ */
+/* ═══════ 3 層載入策略 ═══════ */
 
-// Layer 1：即刻用 cache
+// Layer 1：localStorage 快取（即刻）
 (function loadFromCache() {
   try {
     var cached = localStorage.getItem(CACHE_KEY);
@@ -248,83 +238,61 @@ function showToast(msg, type, duration) {
       }
     }
   } catch(e) {}
-  // 無 cache → 顯示 IC loading hint
   document.getElementById('icLoadingHint').style.display = 'flex';
 })();
 
 // Layer 2：背景 fetch 最新
-var rosterPromise = fetch(API_URL + '?action=getRosters').then(function(r){ return r.json(); });
+fetch(API_URL + '?action=getRosters')
+  .then(function(r){ return r.json(); })
+  .then(function(json) {
+    if (json.success) {
+      try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify(json.data));
+        localStorage.setItem(CACHE_TS_KEY, String(Date.now()));
+      } catch(e) {}
+      applyRoster(json.data, false);
+    } else if (!rosterReady) {
+      document.getElementById('icLoadingHint').innerHTML = '❌ 載入失敗：' + json.error;
+    }
+  })
+  .catch(function(err) {
+    if (!rosterReady) {
+      document.getElementById('icLoadingHint').innerHTML = '❌ 無法連接伺服器，請重新整理';
+    }
+  });
 
-rosterPromise.then(function(json) {
-  if (json.success) {
-    // 存入 cache
-    try {
-      localStorage.setItem(CACHE_KEY, JSON.stringify(json.data));
-      localStorage.setItem(CACHE_TS_KEY, String(Date.now()));
-    } catch(e) {}
-
-    applyRoster(json.data, false);
-  } else if (!rosterReady) {
-    document.getElementById('icLoadingHint').innerHTML = '❌ 載入失敗：' + json.error;
-  }
-}).catch(function(err) {
-  if (!rosterReady) {
-    document.getElementById('icLoadingHint').innerHTML = '❌ 無法連接伺服器，請重新整理';
-  }
-});
-
-/* ═══════════════════════════════════════════
-   填入 IC dropdown
-   isCache = true 代表從 cache 載入（之後 server 會再覆蓋）
-   ═══════════════════════════════════════════ */
+/* ═══════ 填入 IC dropdown ═══════ */
 function applyRoster(data, isCache) {
   rosterData = data;
   rosterReady = true;
 
   var sel1 = document.getElementById('icSelect1');
   var sel2 = document.getElementById('icSelect2');
-
-  // 保留已選值
   var prev1 = sel1.value;
   var prev2 = sel2.value;
 
-  // 清空再填
   sel1.innerHTML = '<option value="">選擇 IC...</option>';
   sel2.innerHTML = '<option value="">無</option>';
-
-  var frag1 = document.createDocumentFragment();
-  var frag2 = document.createDocumentFragment();
 
   rosterData.ics.forEach(function(ic) {
     var o1 = document.createElement('option');
     o1.value = ic.nickname;
     o1.textContent = ic.nickname + ' (' + ic.fullName + ')';
-    frag1.appendChild(o1);
+    sel1.appendChild(o1);
 
     var o2 = document.createElement('option');
     o2.value = ic.nickname;
     o2.textContent = ic.nickname + ' (' + ic.fullName + ')';
-    frag2.appendChild(o2);
+    sel2.appendChild(o2);
   });
 
-  sel1.appendChild(frag1);
-  sel2.appendChild(frag2);
-
-  // 恢復已選值
   if (prev1) sel1.value = prev1;
   if (prev2) sel2.value = prev2;
 
-  // 隱藏 loading hint
   document.getElementById('icLoadingHint').style.display = 'none';
-
-  if (!isCache) {
-    // server 最新數據到了，如果之前用 cache 顯示過，靜靜更新就好
-  }
 }
 
-/* ═══════════════════════════════════════════
-   Hints
-   ═══════════════════════════════════════════ */
+/* ═══════ Hints ═══════ */
 var hitRateHints = [
   '',
   '<span class="star-hint-tag star-hint-1">😴 一個鐘都搵唔到1組客，基本上企定等</span>',
@@ -343,18 +311,14 @@ var bringBackHints = [
   '<span class="star-hint-tag star-hint-5">🔥 3組客帶到2組以上，表現出色</span>'
 ];
 
-/* ═══════════════════════════════════════════
-   Init date
-   ═══════════════════════════════════════════ */
+/* ═══════ Init date ═══════ */
 (function() {
   var d = new Date();
   document.getElementById('dateInput').value =
     d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 })();
 
-/* ═══════════════════════════════════════════
-   IC / Member logic（同原版）
-   ═══════════════════════════════════════════ */
+/* ═══════ IC / Member logic ═══════ */
 function getICDisplay() {
   var ic1 = document.getElementById('icSelect1').value;
   var ic2 = document.getElementById('icSelect2').value;
@@ -569,9 +533,7 @@ function previewSubmit() {
 
 function closePreview() { document.getElementById('previewModal').classList.remove('show'); }
 
-/* ═══════════════════════════════════════════
-   ✅ Optimistic Submit
-   ═══════════════════════════════════════════ */
+/* ═══════ Submit ═══════ */
 function submitForm() {
   var total = parseFloat(document.getElementById('fgTotal').value)||0;
   var roving = parseFloat(document.getElementById('fgRoving').value)||0;
@@ -594,13 +556,11 @@ function submitForm() {
     })
   };
 
-  // 即刻顯示成功
   closePreview();
   document.getElementById('formContainer').style.display = 'none';
   document.getElementById('mainHeader').style.display = 'none';
   document.getElementById('successPage').classList.add('show');
 
-  // 背景發送
   fetch(API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
