@@ -90,9 +90,19 @@ textarea{resize:vertical;min-height:60px;font-family:inherit;}
 .label-sub{font-size:11px;font-weight:400;color:#999;margin-left:2px;}
 .ic-row{display:flex;gap:10px;}
 .ic-row>div{flex:1;}
+
+/* ✅ 新增：Toast 提示 */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);padding:14px 24px;border-radius:14px;font-size:14px;font-weight:600;z-index:9999;box-shadow:0 6px 24px rgba(0,0,0,0.15);transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1);white-space:nowrap;max-width:90vw;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast-success{background:#00b894;color:#fff;}
+.toast-error{background:#ff4757;color:#fff;}
+.toast-warning{background:#ffa502;color:#fff;}
 </style>
 </head>
 <body>
+
+<!-- ✅ Toast 容器 -->
+<div class="toast" id="toast"></div>
 
 <div class="header" id="mainHeader">
   <h1>🎯 Roving Team Daily Report</h1>
@@ -175,7 +185,7 @@ textarea{resize:vertical;min-height:60px;font-family:inherit;}
 <div class="success-page" id="successPage">
   <div class="success-icon">✅</div>
   <h2>提交成功！</h2>
-  <p>數據已記錄到 Google Sheets</p>
+  <p id="successMsg">數據已記錄到 Google Sheets</p>
   <button class="submit-btn" style="max-width:300px;margin:30px auto 0;" onclick="location.reload()">📝 填寫新記錄</button>
 </div>
 
@@ -201,12 +211,32 @@ textarea{resize:vertical;min-height:60px;font-family:inherit;}
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbyC79wwzGLIKx9Dvs8-IWJZt7A_1MG1KXo-rAce1IR4Em33-Zept5iKRmfQnEKg8GQzWg/exec';
 
-/* ═══ ✅ 優化：即刻 fire fetch，唔等 window.onload ═══ */
+/* ═══════════════════════════════════════════
+   ✅ 優化 1：同時 fire ping + getRosters
+   ping 負責喚醒 server，getRosters 拎數據
+   兩個 parallel 跑，邊個先返就先用
+   ═══════════════════════════════════════════ */
+var pingPromise = fetch(API_URL + '?action=ping').catch(function(){});
 var rosterPromise = fetch(API_URL + '?action=getRosters').then(function(r){ return r.json(); });
 
 let rosterData = { ics: [], staff: [] };
 let members = [];
 let selectedWeather = '';
+
+/* ═══════════════════════════════════════════
+   ✅ 優化 2：Toast 通知系統
+   ═══════════════════════════════════════════ */
+function showToast(msg, type, duration) {
+  type = type || 'success';
+  duration = duration || 3000;
+  var toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'toast toast-' + type + ' show';
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(function() {
+    toast.classList.remove('show');
+  }, duration);
+}
 
 var hitRateHints = [
   '',
@@ -316,7 +346,6 @@ function syncICMembers() {
   renderMembers();
 }
 
-/* ═══ ✅ 優化：即刻設日期 + await 已經出發咗嘅 fetch ═══ */
 (function init() {
   var today = new Date();
   var yyyy = today.getFullYear();
@@ -557,11 +586,12 @@ function closePreview() {
   document.getElementById('previewModal').classList.remove('show');
 }
 
-async function submitForm() {
-  var btn = document.getElementById('confirmBtn');
-  btn.textContent = '提交中...';
-  btn.disabled = true;
-
+/* ═══════════════════════════════════════════
+   ✅ 優化 3：Optimistic Submit
+   即刻顯示成功 → 背景先 send → 失敗先 toast 提醒
+   ═══════════════════════════════════════════ */
+function submitForm() {
+  // 1️⃣ 組裝 payload（submit 之前做）
   var total = parseFloat(document.getElementById('fgTotal').value) || 0;
   var roving = parseFloat(document.getElementById('fgRoving').value) || 0;
   var pct = (total > 0 && selectedWeather !== 'bad') ? ((roving/total)*100).toFixed(1) : '';
@@ -587,29 +617,36 @@ async function submitForm() {
     })
   };
 
-  try {
-    var res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload)
-    });
-    var json = await res.json();
+  // 2️⃣ 即刻顯示成功（唔等 server）
+  closePreview();
+  document.getElementById('formContainer').style.display = 'none';
+  document.getElementById('mainHeader').style.display = 'none';
+  document.getElementById('successPage').classList.add('show');
 
+  // 3️⃣ 背景發送（用戶已經見到成功畫面）
+  fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload)
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(json) {
     if (json.success) {
-      closePreview();
-      document.getElementById('formContainer').style.display = 'none';
-      document.getElementById('mainHeader').style.display = 'none';
-      document.getElementById('successPage').classList.add('show');
+      // ✅ 真正成功，靜靜哋確認
+      document.getElementById('successMsg').textContent = '數據已記錄到 Google Sheets';
     } else {
-      alert('提交失敗：' + json.error);
-      btn.textContent = '✅ 確認提交';
-      btn.disabled = false;
+      // ❌ Server 回報失敗
+      document.getElementById('successMsg').innerHTML =
+        '⚠️ 提交可能未成功<br><small style="color:#ff4757;">錯誤：' + json.error + '</small>';
+      showToast('⚠️ 提交可能失敗，請檢查記錄', 'error', 5000);
     }
-  } catch(err) {
-    alert('網絡錯誤：' + err.message);
-    btn.textContent = '✅ 確認提交';
-    btn.disabled = false;
-  }
+  })
+  .catch(function(err) {
+    // ❌ 網絡失敗
+    document.getElementById('successMsg').innerHTML =
+      '⚠️ 網絡不穩定，提交可能未成功<br><small style="color:#ff4757;">請到 Dashboard 確認</small>';
+    showToast('⚠️ 網絡不穩定，請檢查記錄', 'error', 5000);
+  });
 }
 </script>
 </body>
