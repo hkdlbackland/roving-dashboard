@@ -46,10 +46,6 @@ textarea{resize:vertical;min-height:60px;font-family:inherit;}
 .star-hint-3{background:#fffbe6;color:#b7950b;border:1px solid #f5e6a3;}
 .star-hint-4{background:#eafaf1;color:#27ae60;border:1px solid #a9dfbf;}
 .star-hint-5{background:#eaf0ff;color:#667eea;border:1px solid #b8c9ff;}
-.counter{display:flex;align-items:center;gap:14px;}
-.counter button{width:42px;height:42px;border-radius:50%;border:2.5px solid #667eea;background:#fff;color:#667eea;font-size:22px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
-.counter button:active{background:#667eea;color:#fff;transform:scale(0.95);}
-.counter .count-display{font-size:24px;font-weight:800;color:#333;min-width:44px;text-align:center;}
 .revenue-row{display:flex;gap:12px;margin-bottom:10px;}
 .revenue-row>div{flex:1;}
 .rov-pct{font-size:28px;font-weight:800;color:#667eea;text-align:center;padding:10px 0;}
@@ -71,9 +67,6 @@ textarea{resize:vertical;min-height:60px;font-family:inherit;}
 @keyframes bounceIn{0%{transform:scale(0);opacity:0;}50%{transform:scale(1.25);}100%{transform:scale(1);opacity:1;}}
 .success-page h2{margin:20px 0 10px;color:#333;font-size:22px;}
 .success-page p{color:#888;font-size:15px;}
-.loading{text-align:center;padding:60px 20px;color:#888;font-size:15px;}
-.loading .spinner{display:inline-block;width:40px;height:40px;border:4px solid #e8e8e8;border-top:4px solid #667eea;border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:16px;}
-@keyframes spin{to{transform:rotate(360deg);}}
 .member-list{max-height:55vh;overflow-y:auto;}
 .member-list-group h3{font-size:13px;color:#888;padding:10px 0 6px;border-bottom:1px solid #eee;}
 .member-option{padding:12px;border-radius:12px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:background 0.15s;}
@@ -91,17 +84,20 @@ textarea{resize:vertical;min-height:60px;font-family:inherit;}
 .ic-row{display:flex;gap:10px;}
 .ic-row>div{flex:1;}
 
-/* ✅ 新增：Toast 提示 */
+/* ✅ 新增：IC 載入中提示 */
+.ic-loading-hint{font-size:11px;color:#667eea;margin-top:4px;display:flex;align-items:center;gap:4px;}
+.ic-loading-hint .mini-spin{display:inline-block;width:12px;height:12px;border:2px solid #e0e7ff;border-top:2px solid #667eea;border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ✅ 新增：Toast */
 .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);padding:14px 24px;border-radius:14px;font-size:14px;font-weight:600;z-index:9999;box-shadow:0 6px 24px rgba(0,0,0,0.15);transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1);white-space:nowrap;max-width:90vw;}
 .toast.show{transform:translateX(-50%) translateY(0);}
 .toast-success{background:#00b894;color:#fff;}
 .toast-error{background:#ff4757;color:#fff;}
-.toast-warning{background:#ffa502;color:#fff;}
 </style>
 </head>
 <body>
 
-<!-- ✅ Toast 容器 -->
 <div class="toast" id="toast"></div>
 
 <div class="header" id="mainHeader">
@@ -110,12 +106,9 @@ textarea{resize:vertical;min-height:60px;font-family:inherit;}
 </div>
 
 <div class="container" id="formContainer">
-  <div class="loading" id="loadingMsg">
-    <div class="spinner"></div>
-    <div>載入名單中...</div>
-  </div>
 
-  <div id="formContent" style="display:none;">
+  <!-- ✅ 唔再用 loading 擋住成個 form -->
+  <div id="formContent">
 
     <div class="section">
       <div class="section-title">📅 基本資料</div>
@@ -143,13 +136,17 @@ textarea{resize:vertical;min-height:60px;font-family:inherit;}
             <select id="icSelect2" onchange="syncICMembers()"><option value="">無</option></select>
           </div>
         </div>
+        <!-- ✅ IC 載入中提示（名單未到時顯示） -->
+        <div class="ic-loading-hint" id="icLoadingHint" style="display:none;">
+          <span class="mini-spin"></span> 名單載入中，請先填其他欄位...
+        </div>
       </div>
     </div>
 
     <div class="section" id="teamSection">
       <div class="section-title">👥 團隊成員</div>
       <div id="memberCards"></div>
-      <button class="add-btn" onclick="openMemberModal()">＋ 加同事</button>
+      <button class="add-btn" id="addMemberBtn" onclick="openMemberModal()">＋ 加同事</button>
     </div>
 
     <div class="section" id="badWeatherNotice" style="display:none;">
@@ -210,34 +207,124 @@ textarea{resize:vertical;min-height:60px;font-family:inherit;}
 
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbyC79wwzGLIKx9Dvs8-IWJZt7A_1MG1KXo-rAce1IR4Em33-Zept5iKRmfQnEKg8GQzWg/exec';
-
-/* ═══════════════════════════════════════════
-   ✅ 優化 1：同時 fire ping + getRosters
-   ping 負責喚醒 server，getRosters 拎數據
-   兩個 parallel 跑，邊個先返就先用
-   ═══════════════════════════════════════════ */
-var pingPromise = fetch(API_URL + '?action=ping').catch(function(){});
-var rosterPromise = fetch(API_URL + '?action=getRosters').then(function(r){ return r.json(); });
+const CACHE_KEY = 'rovingRosterCache';
+const CACHE_TS_KEY = 'rovingRosterCacheTS';
+const CACHE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 小時
 
 let rosterData = { ics: [], staff: [] };
+let rosterReady = false;
 let members = [];
 let selectedWeather = '';
 
 /* ═══════════════════════════════════════════
-   ✅ 優化 2：Toast 通知系統
+   Toast
    ═══════════════════════════════════════════ */
 function showToast(msg, type, duration) {
   type = type || 'success';
   duration = duration || 3000;
-  var toast = document.getElementById('toast');
-  toast.textContent = msg;
-  toast.className = 'toast toast-' + type + ' show';
-  clearTimeout(toast._timer);
-  toast._timer = setTimeout(function() {
-    toast.classList.remove('show');
-  }, duration);
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast toast-' + type + ' show';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(function() { t.classList.remove('show'); }, duration);
 }
 
+/* ═══════════════════════════════════════════
+   ✅ 核心：3 層載入策略
+   Layer 1 — localStorage 快取（即刻）
+   Layer 2 — fetch 最新名單（背景更新）
+   ═══════════════════════════════════════════ */
+
+// Layer 1：即刻用 cache
+(function loadFromCache() {
+  try {
+    var cached = localStorage.getItem(CACHE_KEY);
+    var ts = parseInt(localStorage.getItem(CACHE_TS_KEY)) || 0;
+    if (cached && (Date.now() - ts < CACHE_MAX_AGE)) {
+      var data = JSON.parse(cached);
+      if (data.ics && data.ics.length > 0) {
+        applyRoster(data, true);
+        return;
+      }
+    }
+  } catch(e) {}
+  // 無 cache → 顯示 IC loading hint
+  document.getElementById('icLoadingHint').style.display = 'flex';
+})();
+
+// Layer 2：背景 fetch 最新
+var rosterPromise = fetch(API_URL + '?action=getRosters').then(function(r){ return r.json(); });
+
+rosterPromise.then(function(json) {
+  if (json.success) {
+    // 存入 cache
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(json.data));
+      localStorage.setItem(CACHE_TS_KEY, String(Date.now()));
+    } catch(e) {}
+
+    applyRoster(json.data, false);
+  } else if (!rosterReady) {
+    document.getElementById('icLoadingHint').innerHTML = '❌ 載入失敗：' + json.error;
+  }
+}).catch(function(err) {
+  if (!rosterReady) {
+    document.getElementById('icLoadingHint').innerHTML = '❌ 無法連接伺服器，請重新整理';
+  }
+});
+
+/* ═══════════════════════════════════════════
+   填入 IC dropdown
+   isCache = true 代表從 cache 載入（之後 server 會再覆蓋）
+   ═══════════════════════════════════════════ */
+function applyRoster(data, isCache) {
+  rosterData = data;
+  rosterReady = true;
+
+  var sel1 = document.getElementById('icSelect1');
+  var sel2 = document.getElementById('icSelect2');
+
+  // 保留已選值
+  var prev1 = sel1.value;
+  var prev2 = sel2.value;
+
+  // 清空再填
+  sel1.innerHTML = '<option value="">選擇 IC...</option>';
+  sel2.innerHTML = '<option value="">無</option>';
+
+  var frag1 = document.createDocumentFragment();
+  var frag2 = document.createDocumentFragment();
+
+  rosterData.ics.forEach(function(ic) {
+    var o1 = document.createElement('option');
+    o1.value = ic.nickname;
+    o1.textContent = ic.nickname + ' (' + ic.fullName + ')';
+    frag1.appendChild(o1);
+
+    var o2 = document.createElement('option');
+    o2.value = ic.nickname;
+    o2.textContent = ic.nickname + ' (' + ic.fullName + ')';
+    frag2.appendChild(o2);
+  });
+
+  sel1.appendChild(frag1);
+  sel2.appendChild(frag2);
+
+  // 恢復已選值
+  if (prev1) sel1.value = prev1;
+  if (prev2) sel2.value = prev2;
+
+  // 隱藏 loading hint
+  document.getElementById('icLoadingHint').style.display = 'none';
+
+  if (!isCache) {
+    // server 最新數據到了，如果之前用 cache 顯示過，靜靜更新就好
+  }
+}
+
+/* ═══════════════════════════════════════════
+   Hints
+   ═══════════════════════════════════════════ */
 var hitRateHints = [
   '',
   '<span class="star-hint-tag star-hint-1">😴 一個鐘都搵唔到1組客，基本上企定等</span>',
@@ -256,6 +343,18 @@ var bringBackHints = [
   '<span class="star-hint-tag star-hint-5">🔥 3組客帶到2組以上，表現出色</span>'
 ];
 
+/* ═══════════════════════════════════════════
+   Init date
+   ═══════════════════════════════════════════ */
+(function() {
+  var d = new Date();
+  document.getElementById('dateInput').value =
+    d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+})();
+
+/* ═══════════════════════════════════════════
+   IC / Member logic（同原版）
+   ═══════════════════════════════════════════ */
 function getICDisplay() {
   var ic1 = document.getElementById('icSelect1').value;
   var ic2 = document.getElementById('icSelect2').value;
@@ -268,9 +367,7 @@ function updateIC2Options() {
   var ic1Val = document.getElementById('icSelect1').value;
   var sel2 = document.getElementById('icSelect2');
   var currentIC2 = sel2.value;
-
   sel2.innerHTML = '<option value="">無</option>';
-
   rosterData.ics.forEach(function(ic) {
     if (ic.nickname === ic1Val) return;
     var opt = document.createElement('option');
@@ -278,120 +375,48 @@ function updateIC2Options() {
     opt.textContent = ic.nickname + ' (' + ic.fullName + ')';
     sel2.appendChild(opt);
   });
-
-  if (currentIC2 !== ic1Val) {
-    sel2.value = currentIC2;
-  } else {
-    sel2.value = '';
-  }
+  sel2.value = (currentIC2 !== ic1Val) ? currentIC2 : '';
 }
 
 function syncICMembers() {
   if (selectedWeather === 'bad') return;
-
   members.forEach(function(m, i) {
     var capEl = document.getElementById('cap' + i);
     if (capEl) m.captures = parseInt(capEl.value) || 0;
     var remEl = document.getElementById('remark' + i);
     if (remEl) m.remark = remEl.value;
   });
-
   var autoICData = {};
   members.forEach(function(m) {
-    if (m.autoIC) {
-      autoICData[m.name] = { captures: m.captures, remark: m.remark };
-    }
+    if (m.autoIC) autoICData[m.name] = { captures: m.captures, remark: m.remark };
   });
-
   members = members.filter(function(m) { return !m.autoIC; });
 
   var ic1Val = document.getElementById('icSelect1').value;
   var ic2Val = document.getElementById('icSelect2').value;
 
   if (ic1Val && !members.some(function(m) { return m.name === ic1Val; })) {
-    var ic1Person = rosterData.ics.find(function(ic) { return ic.nickname === ic1Val; });
-    if (ic1Person) {
-      var prev1 = autoICData[ic1Val] || {};
-      members.unshift({
-        name: ic1Person.nickname,
-        fullName: ic1Person.fullName,
-        role: 'ic',
-        captures: prev1.captures || 0,
-        hitRate: 0,
-        bringBack: 0,
-        remark: prev1.remark || '',
-        autoIC: true
-      });
+    var p1 = rosterData.ics.find(function(ic) { return ic.nickname === ic1Val; });
+    if (p1) {
+      var d1 = autoICData[ic1Val] || {};
+      members.unshift({ name:p1.nickname, fullName:p1.fullName, role:'ic', captures:d1.captures||0, hitRate:0, bringBack:0, remark:d1.remark||'', autoIC:true });
     }
   }
-
   if (ic2Val && !members.some(function(m) { return m.name === ic2Val; })) {
-    var ic2Person = rosterData.ics.find(function(ic) { return ic.nickname === ic2Val; });
-    if (ic2Person) {
-      var prev2 = autoICData[ic2Val] || {};
-      var insertIdx = (members.length > 0 && members[0].autoIC) ? 1 : 0;
-      members.splice(insertIdx, 0, {
-        name: ic2Person.nickname,
-        fullName: ic2Person.fullName,
-        role: 'ic',
-        captures: prev2.captures || 0,
-        hitRate: 0,
-        bringBack: 0,
-        remark: prev2.remark || '',
-        autoIC: true
-      });
+    var p2 = rosterData.ics.find(function(ic) { return ic.nickname === ic2Val; });
+    if (p2) {
+      var d2 = autoICData[ic2Val] || {};
+      var idx = (members.length > 0 && members[0].autoIC) ? 1 : 0;
+      members.splice(idx, 0, { name:p2.nickname, fullName:p2.fullName, role:'ic', captures:d2.captures||0, hitRate:0, bringBack:0, remark:d2.remark||'', autoIC:true });
     }
   }
-
   renderMembers();
 }
-
-(function init() {
-  var today = new Date();
-  var yyyy = today.getFullYear();
-  var mm = String(today.getMonth()+1).padStart(2,'0');
-  var dd = String(today.getDate()).padStart(2,'0');
-  document.getElementById('dateInput').value = yyyy+'-'+mm+'-'+dd;
-
-  rosterPromise.then(function(json) {
-    if (json.success) {
-      rosterData = json.data;
-
-      var sel1 = document.getElementById('icSelect1');
-      var sel2 = document.getElementById('icSelect2');
-      var frag1 = document.createDocumentFragment();
-      var frag2 = document.createDocumentFragment();
-
-      rosterData.ics.forEach(function(ic) {
-        var opt1 = document.createElement('option');
-        opt1.value = ic.nickname;
-        opt1.textContent = ic.nickname + ' (' + ic.fullName + ')';
-        frag1.appendChild(opt1);
-
-        var opt2 = document.createElement('option');
-        opt2.value = ic.nickname;
-        opt2.textContent = ic.nickname + ' (' + ic.fullName + ')';
-        frag2.appendChild(opt2);
-      });
-
-      sel1.appendChild(frag1);
-      sel2.appendChild(frag2);
-
-      document.getElementById('loadingMsg').style.display = 'none';
-      document.getElementById('formContent').style.display = 'block';
-    } else {
-      document.getElementById('loadingMsg').innerHTML = '❌ 載入失敗：' + json.error;
-    }
-  }).catch(function(err) {
-    document.getElementById('loadingMsg').innerHTML = '❌ 無法連接伺服器<br><small>' + err.message + '</small>';
-  });
-})();
 
 function selectWeather(btn) {
   document.querySelectorAll('.weather-btn').forEach(function(b){ b.classList.remove('active'); });
   btn.classList.add('active');
   selectedWeather = btn.dataset.weather;
-
   if (selectedWeather === 'bad') {
     document.getElementById('rovingField').style.display = 'none';
     document.getElementById('fgRoving').value = '';
@@ -410,51 +435,37 @@ function selectWeather(btn) {
 }
 
 function openMemberModal() {
+  if (!rosterReady) {
+    showToast('⏳ 名單仲載入緊，請等一陣', 'error', 2000);
+    return;
+  }
   var list = document.getElementById('memberList');
   var addedNames = members.map(function(m){ return m.name; });
   var html = '';
-
   html += '<div class="member-list-group"><h3>🧑‍💼 IC</h3>';
   rosterData.ics.forEach(function(ic, idx) {
     var dis = (addedNames.indexOf(ic.nickname) !== -1) ? 'disabled' : '';
-    html += '<div class="member-option '+dis+'" onclick="selectPerson(\'ic\','+idx+')">';
-    html += '<span class="emoji">🧑‍💼</span>';
-    html += '<div><div class="name">'+ic.nickname+'</div><div class="full-name">'+ic.fullName+'</div></div></div>';
+    html += '<div class="member-option '+dis+'" onclick="selectPerson(\'ic\','+idx+')"><span class="emoji">🧑‍💼</span><div><div class="name">'+ic.nickname+'</div><div class="full-name">'+ic.fullName+'</div></div></div>';
   });
   html += '</div>';
-
   html += '<div class="member-list-group"><h3>👤 同事</h3>';
   rosterData.staff.forEach(function(s, idx) {
     var dis = addedNames.indexOf(s.nickname) !== -1 ? 'disabled' : '';
-    html += '<div class="member-option '+dis+'" onclick="selectPerson(\'staff\','+idx+')">';
-    html += '<span class="emoji">👤</span>';
-    html += '<div><div class="name">'+s.nickname+'</div><div class="full-name">'+s.fullName+'</div></div></div>';
+    html += '<div class="member-option '+dis+'" onclick="selectPerson(\'staff\','+idx+')"><span class="emoji">👤</span><div><div class="name">'+s.nickname+'</div><div class="full-name">'+s.fullName+'</div></div></div>';
   });
   html += '</div>';
-
   list.innerHTML = html;
   document.getElementById('memberModal').classList.add('show');
 }
 
 function selectPerson(type, idx) {
   var person = type === 'ic' ? rosterData.ics[idx] : rosterData.staff[idx];
-  members.push({
-    name: person.nickname,
-    fullName: person.fullName,
-    role: type,
-    captures: 0,
-    hitRate: 0,
-    bringBack: 0,
-    remark: '',
-    autoIC: false
-  });
+  members.push({ name:person.nickname, fullName:person.fullName, role:type, captures:0, hitRate:0, bringBack:0, remark:'', autoIC:false });
   closeMemberModal();
   renderMembers();
 }
 
-function closeMemberModal() {
-  document.getElementById('memberModal').classList.remove('show');
-}
+function closeMemberModal() { document.getElementById('memberModal').classList.remove('show'); }
 
 function removeMember(idx) {
   if (members[idx].autoIC) return;
@@ -465,48 +476,29 @@ function removeMember(idx) {
 function renderMembers() {
   var container = document.getElementById('memberCards');
   var html = '';
-
   members.forEach(function(m, i) {
     var isIC = m.role === 'ic';
     var cls = isIC ? 'ic-card' : 'staff-card';
     var badge = isIC ? '🧑‍💼 IC' : '👤 同事';
-
     html += '<div class="member-card '+cls+'">';
-
-    if (!m.autoIC) {
-      html += '<button class="remove-btn" onclick="removeMember('+i+')">✕</button>';
-    }
-
+    if (!m.autoIC) html += '<button class="remove-btn" onclick="removeMember('+i+')">✕</button>';
     html += '<span class="role-badge">'+badge+'</span>';
-    if (m.autoIC) {
-      html += '<span class="auto-badge">自動加入</span>';
-    }
+    if (m.autoIC) html += '<span class="auto-badge">自動加入</span>';
     html += '<h3 style="font-size:16px;margin-bottom:14px;">'+m.name+'</h3>';
-
     html += '<div class="field-group"><label>Captures</label>';
-    html += '<input type="number" class="captures-input" id="cap'+i+'" value="'+m.captures+'" min="0" inputmode="numeric" pattern="[0-9]*" placeholder="輸入數字" oninput="updateCaptures('+i+',this)" onfocus="this.select()">';
-    html += '</div>';
-
+    html += '<input type="number" class="captures-input" id="cap'+i+'" value="'+m.captures+'" min="0" inputmode="numeric" pattern="[0-9]*" placeholder="輸入數字" oninput="updateCaptures('+i+',this)" onfocus="this.select()"></div>';
     if (!isIC) {
       html += '<div class="field-group"><label>★ Hit Rate <span class="label-sub">（一個小時3組客）</span></label><div class="star-rating">';
-      for (var s=1; s<=5; s++) {
-        html += '<span class="star '+(s<=m.hitRate?'active':'')+'" onclick="setRate('+i+',\'hitRate\','+s+')">★</span>';
-      }
-      html += '</div><div class="star-hint">'+(hitRateHints[m.hitRate] || '')+'</div></div>';
-
+      for (var s=1; s<=5; s++) html += '<span class="star '+(s<=m.hitRate?'active':'')+'" onclick="setRate('+i+',\'hitRate\','+s+')">★</span>';
+      html += '</div><div class="star-hint">'+(hitRateHints[m.hitRate]||'')+'</div></div>';
       html += '<div class="field-group"><label>★ 帶返去 FG Cart <span class="label-sub">（3組客帶到1-2組）</span></label><div class="star-rating">';
-      for (var s2=1; s2<=5; s2++) {
-        html += '<span class="star '+(s2<=m.bringBack?'active':'')+'" onclick="setRate('+i+',\'bringBack\','+s2+')">★</span>';
-      }
-      html += '</div><div class="star-hint">'+(bringBackHints[m.bringBack] || '')+'</div></div>';
+      for (var s2=1; s2<=5; s2++) html += '<span class="star '+(s2<=m.bringBack?'active':'')+'" onclick="setRate('+i+',\'bringBack\','+s2+')">★</span>';
+      html += '</div><div class="star-hint">'+(bringBackHints[m.bringBack]||'')+'</div></div>';
     }
-
     html += '<div class="field-group"><label>備註</label>';
     html += '<textarea id="remark'+i+'" placeholder="輸入備註..." oninput="members['+i+'].remark=this.value">'+m.remark+'</textarea></div>';
-
     html += '</div>';
   });
-
   container.innerHTML = html;
 }
 
@@ -518,21 +510,18 @@ function updateCaptures(idx, el) {
 
 function setRate(idx, field, val) {
   members.forEach(function(m, i) {
-    var capEl = document.getElementById('cap' + i);
-    if (capEl) { m.captures = parseInt(capEl.value) || 0; }
-    var remEl = document.getElementById('remark' + i);
-    if (remEl) { m.remark = remEl.value; }
+    var c = document.getElementById('cap'+i); if(c) m.captures = parseInt(c.value)||0;
+    var r = document.getElementById('remark'+i); if(r) m.remark = r.value;
   });
   members[idx][field] = val;
   renderMembers();
 }
 
 function calcRovPct() {
-  var total = parseFloat(document.getElementById('fgTotal').value) || 0;
-  var roving = parseFloat(document.getElementById('fgRoving').value) || 0;
+  var total = parseFloat(document.getElementById('fgTotal').value)||0;
+  var roving = parseFloat(document.getElementById('fgRoving').value)||0;
   if (total > 0 && roving > 0 && selectedWeather !== 'bad') {
-    var pct = ((roving/total)*100).toFixed(1);
-    document.getElementById('rovPct').textContent = pct + '%';
+    document.getElementById('rovPct').textContent = ((roving/total)*100).toFixed(1)+'%';
     document.getElementById('rovPctDisplay').style.display = 'block';
   } else {
     document.getElementById('rovPctDisplay').style.display = 'none';
@@ -541,26 +530,22 @@ function calcRovPct() {
 
 function previewSubmit() {
   members.forEach(function(m, i) {
-    var capEl = document.getElementById('cap' + i);
-    if (capEl) { m.captures = parseInt(capEl.value) || 0; }
-    var remEl = document.getElementById('remark' + i);
-    if (remEl) { m.remark = remEl.value; }
+    var c = document.getElementById('cap'+i); if(c) m.captures = parseInt(c.value)||0;
+    var r = document.getElementById('remark'+i); if(r) m.remark = r.value;
   });
-
   if (!document.getElementById('dateInput').value) return alert('請選擇日期');
   if (!selectedWeather) return alert('請選擇天氣');
   if (!document.getElementById('icSelect1').value) return alert('請選擇 IC 1');
   if (selectedWeather !== 'bad' && members.length === 0) return alert('請至少加一位成員');
 
   var wMap = {sunny:'☀️ 正常', cloudy:'🌦️ 間歇落雨', bad:'⛈️ 惡劣'};
-  var total = document.getElementById('fgTotal').value || '0';
-  var roving = document.getElementById('fgRoving').value || '0';
-  var icDisplay = getICDisplay();
+  var total = document.getElementById('fgTotal').value||'0';
+  var roving = document.getElementById('fgRoving').value||'0';
 
   var html = '<div class="preview-info">';
   html += '<p><b>日期：</b>'+document.getElementById('dateInput').value+'</p>';
   html += '<p><b>天氣：</b>'+wMap[selectedWeather]+'</p>';
-  html += '<p><b>IC：</b>'+icDisplay+'</p>';
+  html += '<p><b>IC：</b>'+getICDisplay()+'</p>';
   html += '<p><b>FG 總收入：</b>$'+total+'</p>';
   if (selectedWeather !== 'bad') html += '<p><b>Roving 收入：</b>$'+roving+'</p>';
   html += '</div><hr style="margin:12px 0;border:none;border-top:1px solid #eee;">';
@@ -570,7 +555,7 @@ function previewSubmit() {
   } else {
     html += '<div style="font-size:14px;font-weight:700;margin-bottom:8px;">👥 團隊成員 ('+members.length+'人)</div>';
     members.forEach(function(m) {
-      html += '<div class="preview-item"><b>'+m.name+'</b> <span style="color:#888;">('+( m.role==='ic'?'IC':'同事')+')</span><br>';
+      html += '<div class="preview-item"><b>'+m.name+'</b> <span style="color:#888;">('+(m.role==='ic'?'IC':'同事')+')</span><br>';
       html += 'Captures: '+m.captures;
       if (m.role !== 'ic') html += ' ｜ Hit Rate: '+m.hitRate+'★ ｜ 帶返去 FG Cart: '+m.bringBack+'★';
       if (m.remark) html += '<br><span style="color:#888;">💬 '+m.remark+'</span>';
@@ -582,18 +567,14 @@ function previewSubmit() {
   document.getElementById('previewModal').classList.add('show');
 }
 
-function closePreview() {
-  document.getElementById('previewModal').classList.remove('show');
-}
+function closePreview() { document.getElementById('previewModal').classList.remove('show'); }
 
 /* ═══════════════════════════════════════════
-   ✅ 優化 3：Optimistic Submit
-   即刻顯示成功 → 背景先 send → 失敗先 toast 提醒
+   ✅ Optimistic Submit
    ═══════════════════════════════════════════ */
 function submitForm() {
-  // 1️⃣ 組裝 payload（submit 之前做）
-  var total = parseFloat(document.getElementById('fgTotal').value) || 0;
-  var roving = parseFloat(document.getElementById('fgRoving').value) || 0;
+  var total = parseFloat(document.getElementById('fgTotal').value)||0;
+  var roving = parseFloat(document.getElementById('fgRoving').value)||0;
   var pct = (total > 0 && selectedWeather !== 'bad') ? ((roving/total)*100).toFixed(1) : '';
 
   var payload = {
@@ -606,24 +587,20 @@ function submitForm() {
     fgRoving: selectedWeather !== 'bad' ? roving : '',
     rovPct: pct,
     entries: members.map(function(m) {
-      return {
-        name: m.name,
-        role: m.role,
-        captures: m.captures,
-        hitRate: m.role !== 'ic' ? m.hitRate : '',
-        bringBack: m.role !== 'ic' ? m.bringBack : '',
-        remark: m.remark
-      };
+      return { name:m.name, role:m.role, captures:m.captures,
+        hitRate: m.role!=='ic' ? m.hitRate : '',
+        bringBack: m.role!=='ic' ? m.bringBack : '',
+        remark: m.remark };
     })
   };
 
-  // 2️⃣ 即刻顯示成功（唔等 server）
+  // 即刻顯示成功
   closePreview();
   document.getElementById('formContainer').style.display = 'none';
   document.getElementById('mainHeader').style.display = 'none';
   document.getElementById('successPage').classList.add('show');
 
-  // 3️⃣ 背景發送（用戶已經見到成功畫面）
+  // 背景發送
   fetch(API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -632,19 +609,14 @@ function submitForm() {
   .then(function(res) { return res.json(); })
   .then(function(json) {
     if (json.success) {
-      // ✅ 真正成功，靜靜哋確認
-      document.getElementById('successMsg').textContent = '數據已記錄到 Google Sheets';
+      document.getElementById('successMsg').textContent = '數據已記錄到 Google Sheets ✅';
     } else {
-      // ❌ Server 回報失敗
-      document.getElementById('successMsg').innerHTML =
-        '⚠️ 提交可能未成功<br><small style="color:#ff4757;">錯誤：' + json.error + '</small>';
-      showToast('⚠️ 提交可能失敗，請檢查記錄', 'error', 5000);
+      document.getElementById('successMsg').innerHTML = '⚠️ 提交可能未成功<br><small style="color:#ff4757;">'+json.error+'</small>';
+      showToast('⚠️ 提交可能失敗', 'error', 5000);
     }
   })
   .catch(function(err) {
-    // ❌ 網絡失敗
-    document.getElementById('successMsg').innerHTML =
-      '⚠️ 網絡不穩定，提交可能未成功<br><small style="color:#ff4757;">請到 Dashboard 確認</small>';
+    document.getElementById('successMsg').innerHTML = '⚠️ 網絡不穩定<br><small style="color:#ff4757;">請到 Dashboard 確認記錄</small>';
     showToast('⚠️ 網絡不穩定，請檢查記錄', 'error', 5000);
   });
 }
