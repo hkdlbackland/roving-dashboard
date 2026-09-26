@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Roving Team Daily Report</title>
+<link rel="preconnect" href="https://script.google.com" crossorigin>
+<link rel="dns-prefetch" href="https://script.google.com">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f2f5;min-height:100vh;-webkit-tap-highlight-color:transparent;}
@@ -199,11 +201,13 @@ textarea{resize:vertical;min-height:60px;font-family:inherit;}
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbyC79wwzGLIKx9Dvs8-IWJZt7A_1MG1KXo-rAce1IR4Em33-Zept5iKRmfQnEKg8GQzWg/exec';
 
+/* ═══ ✅ 優化：即刻 fire fetch，唔等 window.onload ═══ */
+var rosterPromise = fetch(API_URL + '?action=getRosters').then(function(r){ return r.json(); });
+
 let rosterData = { ics: [], staff: [] };
 let members = [];
 let selectedWeather = '';
 
-// ✅ 星星解說（帶顏色 tag）
 var hitRateHints = [
   '',
   '<span class="star-hint-tag star-hint-1">😴 一個鐘都搵唔到1組客，基本上企定等</span>',
@@ -312,47 +316,47 @@ function syncICMembers() {
   renderMembers();
 }
 
-window.onload = function() {
-  const today = new Date();
-  const yyyy = today.getFullYear();
-  const mm = String(today.getMonth()+1).padStart(2,'0');
-  const dd = String(today.getDate()).padStart(2,'0');
+/* ═══ ✅ 優化：即刻設日期 + await 已經出發咗嘅 fetch ═══ */
+(function init() {
+  var today = new Date();
+  var yyyy = today.getFullYear();
+  var mm = String(today.getMonth()+1).padStart(2,'0');
+  var dd = String(today.getDate()).padStart(2,'0');
   document.getElementById('dateInput').value = yyyy+'-'+mm+'-'+dd;
-  loadRosters();
-};
 
-async function loadRosters() {
-  try {
-    const res = await fetch(API_URL + '?action=getRosters');
-    const json = await res.json();
+  rosterPromise.then(function(json) {
     if (json.success) {
       rosterData = json.data;
 
       var sel1 = document.getElementById('icSelect1');
+      var sel2 = document.getElementById('icSelect2');
+      var frag1 = document.createDocumentFragment();
+      var frag2 = document.createDocumentFragment();
+
       rosterData.ics.forEach(function(ic) {
-        var opt = document.createElement('option');
-        opt.value = ic.nickname;
-        opt.textContent = ic.nickname + ' (' + ic.fullName + ')';
-        sel1.appendChild(opt);
+        var opt1 = document.createElement('option');
+        opt1.value = ic.nickname;
+        opt1.textContent = ic.nickname + ' (' + ic.fullName + ')';
+        frag1.appendChild(opt1);
+
+        var opt2 = document.createElement('option');
+        opt2.value = ic.nickname;
+        opt2.textContent = ic.nickname + ' (' + ic.fullName + ')';
+        frag2.appendChild(opt2);
       });
 
-      var sel2 = document.getElementById('icSelect2');
-      rosterData.ics.forEach(function(ic) {
-        var opt = document.createElement('option');
-        opt.value = ic.nickname;
-        opt.textContent = ic.nickname + ' (' + ic.fullName + ')';
-        sel2.appendChild(opt);
-      });
+      sel1.appendChild(frag1);
+      sel2.appendChild(frag2);
 
       document.getElementById('loadingMsg').style.display = 'none';
       document.getElementById('formContent').style.display = 'block';
     } else {
       document.getElementById('loadingMsg').innerHTML = '❌ 載入失敗：' + json.error;
     }
-  } catch(err) {
+  }).catch(function(err) {
     document.getElementById('loadingMsg').innerHTML = '❌ 無法連接伺服器<br><small>' + err.message + '</small>';
-  }
-}
+  });
+})();
 
 function selectWeather(btn) {
   document.querySelectorAll('.weather-btn').forEach(function(b){ b.classList.remove('active'); });
