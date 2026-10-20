@@ -64,12 +64,23 @@ textarea{resize:vertical;min-height:60px;font-family:inherit;}
 .btn-cancel{border:2px solid #ddd;background:#fff;color:#666;}
 .btn-confirm{border:none;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;}
 .btn-confirm:active{transform:scale(0.98);}
-.success-page{display:none;text-align:center;padding:60px 20px;}
-.success-page.show{display:block;}
-.success-icon{font-size:80px;animation:bounceIn 0.6s ease;}
+
+/* ═══ 結果頁面（成功 / 失敗 / 載入中） ═══ */
+.result-page{display:none;text-align:center;padding:60px 20px;}
+.result-page.show{display:block;}
+.result-icon{font-size:80px;animation:bounceIn 0.6s ease;}
 @keyframes bounceIn{0%{transform:scale(0);opacity:0;}50%{transform:scale(1.25);}100%{transform:scale(1);opacity:1;}}
-.success-page h2{margin:20px 0 10px;color:#333;font-size:22px;}
-.success-page p{color:#888;font-size:15px;}
+.result-page h2{margin:20px 0 10px;color:#333;font-size:22px;}
+.result-page p{color:#888;font-size:15px;}
+
+.loading-spinner{width:60px;height:60px;border:5px solid #e0e7ff;border-top:5px solid #667eea;border-radius:50%;animation:spin 0.9s linear infinite;margin:0 auto;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.retry-btn{display:inline-block;padding:15px 40px;border:none;border-radius:14px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;font-size:16px;font-weight:700;cursor:pointer;margin-top:24px;box-shadow:0 4px 15px rgba(102,126,234,0.3);transition:all 0.2s;}
+.retry-btn:active{transform:scale(0.98);}
+.new-record-btn{display:inline-block;padding:15px 40px;border:none;border-radius:14px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;font-size:16px;font-weight:700;cursor:pointer;margin-top:24px;box-shadow:0 4px 15px rgba(102,126,234,0.3);transition:all 0.2s;}
+.back-edit-btn{display:inline-block;padding:13px 30px;border:2px solid #ddd;border-radius:14px;background:#fff;color:#666;font-size:15px;font-weight:600;cursor:pointer;margin-top:12px;transition:all 0.2s;}
+
 .member-list{max-height:55vh;overflow-y:auto;}
 .member-list-group h3{font-size:13px;color:#888;padding:10px 0 6px;border-bottom:1px solid #eee;}
 .member-option{padding:12px;border-radius:12px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:background 0.15s;}
@@ -88,7 +99,6 @@ textarea{resize:vertical;min-height:60px;font-family:inherit;}
 .ic-row>div{flex:1;}
 .ic-loading-hint{font-size:11px;color:#667eea;margin-top:4px;display:flex;align-items:center;gap:4px;}
 .ic-loading-hint .mini-spin{display:inline-block;width:12px;height:12px;border:2px solid #e0e7ff;border-top:2px solid #667eea;border-radius:50%;animation:spin 0.8s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
 .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);padding:14px 24px;border-radius:14px;font-size:14px;font-weight:600;z-index:9999;box-shadow:0 6px 24px rgba(0,0,0,0.15);transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1);white-space:nowrap;max-width:90vw;}
 .toast.show{transform:translateX(-50%) translateY(0);}
 .toast-success{background:#00b894;color:#fff;}
@@ -175,11 +185,29 @@ textarea{resize:vertical;min-height:60px;font-family:inherit;}
   </div>
 </div>
 
-<div class="success-page" id="successPage">
-  <div class="success-icon">✅</div>
+<!-- ═══ 提交中 ═══ -->
+<div class="result-page" id="loadingPage">
+  <div class="loading-spinner"></div>
+  <h2 style="margin-top:28px;">提交中...</h2>
+  <p>正在上傳數據，請勿離開此頁面</p>
+</div>
+
+<!-- ═══ 成功 ═══ -->
+<div class="result-page" id="successPage">
+  <div class="result-icon">✅</div>
   <h2>提交成功！</h2>
-  <p id="successMsg">數據已記錄到 Google Sheets</p>
-  <button class="submit-btn" style="max-width:300px;margin:30px auto 0;" onclick="location.reload()">📝 填寫新記錄</button>
+  <p>數據已記錄到 Google Sheets</p>
+  <button class="new-record-btn" onclick="location.reload()">📝 填寫新記錄</button>
+</div>
+
+<!-- ═══ 失敗 ═══ -->
+<div class="result-page" id="failPage">
+  <div class="result-icon">❌</div>
+  <h2>提交失敗</h2>
+  <p id="failMsg" style="color:#ff4757;font-weight:600;">請重試或檢查網絡</p>
+  <button class="retry-btn" onclick="retrySubmit()">🔄 重新提交</button>
+  <br>
+  <button class="back-edit-btn" onclick="backToForm()">← 返回修改</button>
 </div>
 
 <div class="modal-overlay" id="memberModal">
@@ -206,11 +234,13 @@ var API_URL = 'https://script.google.com/macros/s/AKfycbyC79wwzGLIKx9Dvs8-IWJZt7
 var CACHE_KEY = 'rovingRosterCache';
 var CACHE_TS_KEY = 'rovingRosterCacheTS';
 var CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
+var SUBMIT_TIMEOUT = 15000; /* 15秒 timeout */
 
 var rosterData = { ics: [], staff: [] };
 var rosterReady = false;
 var members = [];
 var selectedWeather = '';
+var lastPayload = null; /* 儲存上次 payload 方便重試 */
 
 /* ═══════ Toast ═══════ */
 function showToast(msg, type, duration) {
@@ -221,6 +251,20 @@ function showToast(msg, type, duration) {
   t.className = 'toast toast-' + type + ' show';
   clearTimeout(t._timer);
   t._timer = setTimeout(function() { t.classList.remove('show'); }, duration);
+}
+
+/* ═══════ 頁面切換 ═══════ */
+function showPage(page) {
+  document.getElementById('mainHeader').style.display = (page === 'form') ? 'block' : 'none';
+  document.getElementById('formContainer').style.display = (page === 'form') ? 'block' : 'none';
+  document.getElementById('loadingPage').className = 'result-page' + (page === 'loading' ? ' show' : '');
+  document.getElementById('successPage').className = 'result-page' + (page === 'success' ? ' show' : '');
+  document.getElementById('failPage').className = 'result-page' + (page === 'fail' ? ' show' : '');
+  if (page !== 'form') window.scrollTo(0, 0);
+}
+
+function backToForm() {
+  showPage('form');
 }
 
 /* ═══════ 3 層載入策略 ═══════ */
@@ -497,10 +541,10 @@ function previewSubmit() {
     var c = document.getElementById('cap'+i); if(c) m.captures = parseInt(c.value)||0;
     var r = document.getElementById('remark'+i); if(r) m.remark = r.value;
   });
-  if (!document.getElementById('dateInput').value) return alert('請選擇日期');
-  if (!selectedWeather) return alert('請選擇天氣');
-  if (!document.getElementById('icSelect1').value) return alert('請選擇 IC 1');
-  if (selectedWeather !== 'bad' && members.length === 0) return alert('請至少加一位成員');
+  if (!document.getElementById('dateInput').value) return showToast('請選擇日期', 'error');
+  if (!selectedWeather) return showToast('請選擇天氣', 'error');
+  if (!document.getElementById('icSelect1').value) return showToast('請選擇 IC 1', 'error');
+  if (selectedWeather !== 'bad' && members.length === 0) return showToast('請至少加一位成員', 'error');
 
   var wMap = {sunny:'☀️ 正常', cloudy:'🌦️ 間歇落雨', bad:'⛈️ 惡劣'};
   var total = document.getElementById('fgTotal').value||'0';
@@ -533,13 +577,13 @@ function previewSubmit() {
 
 function closePreview() { document.getElementById('previewModal').classList.remove('show'); }
 
-/* ═══════ Submit ═══════ */
-function submitForm() {
+/* ═══════ 建立 payload ═══════ */
+function buildPayload() {
   var total = parseFloat(document.getElementById('fgTotal').value)||0;
   var roving = parseFloat(document.getElementById('fgRoving').value)||0;
   var pct = (total > 0 && selectedWeather !== 'bad') ? ((roving/total)*100).toFixed(1) : '';
 
-  var payload = {
+  return {
     action: 'submitForm',
     date: document.getElementById('dateInput').value,
     weather: selectedWeather,
@@ -555,30 +599,62 @@ function submitForm() {
         remark: m.remark };
     })
   };
+}
 
-  closePreview();
-  document.getElementById('formContainer').style.display = 'none';
-  document.getElementById('mainHeader').style.display = 'none';
-  document.getElementById('successPage').classList.add('show');
+/* ═══════ 實際送出（帶 timeout） ═══════ */
+function doSubmit(payload) {
+  showPage('loading');
 
-  fetch(API_URL, {
+  var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  var timeoutId = null;
+
+  if (controller) {
+    timeoutId = setTimeout(function() { controller.abort(); }, SUBMIT_TIMEOUT);
+  }
+
+  var fetchOpts = {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify(payload)
-  })
-  .then(function(res) { return res.json(); })
-  .then(function(json) {
-    if (json.success) {
-      document.getElementById('successMsg').textContent = '數據已記錄到 Google Sheets ✅';
-    } else {
-      document.getElementById('successMsg').innerHTML = '⚠️ 提交可能未成功<br><small style="color:#ff4757;">'+json.error+'</small>';
-      showToast('⚠️ 提交可能失敗', 'error', 5000);
-    }
-  })
-  .catch(function(err) {
-    document.getElementById('successMsg').innerHTML = '⚠️ 網絡不穩定<br><small style="color:#ff4757;">請到 Dashboard 確認記錄</small>';
-    showToast('⚠️ 網絡不穩定，請檢查記錄', 'error', 5000);
-  });
+  };
+  if (controller) fetchOpts.signal = controller.signal;
+
+  fetch(API_URL, fetchOpts)
+    .then(function(res) { return res.json(); })
+    .then(function(json) {
+      if (timeoutId) clearTimeout(timeoutId);
+      if (json.success) {
+        showPage('success');
+        showToast('✅ 提交成功！', 'success', 3000);
+      } else {
+        document.getElementById('failMsg').textContent = '❌ 伺服器回覆錯誤：' + (json.error || '未知錯誤');
+        showPage('fail');
+      }
+    })
+    .catch(function(err) {
+      if (timeoutId) clearTimeout(timeoutId);
+      var msg = '網絡不穩定，數據未能送出';
+      if (err.name === 'AbortError') msg = '提交超時（超過15秒），請重試';
+      document.getElementById('failMsg').textContent = '⚠️ ' + msg;
+      showPage('fail');
+    });
+}
+
+/* ═══════ Submit（由確認按鈕觸發） ═══════ */
+function submitForm() {
+  closePreview();
+  lastPayload = buildPayload();
+  doSubmit(lastPayload);
+}
+
+/* ═══════ 重試 ═══════ */
+function retrySubmit() {
+  if (!lastPayload) {
+    showToast('⚠️ 無法重試，請返回重新填寫', 'error');
+    backToForm();
+    return;
+  }
+  doSubmit(lastPayload);
 }
 </script>
 </body>
